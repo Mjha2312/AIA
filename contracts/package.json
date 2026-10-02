@@ -10,6 +10,10 @@
     "lint": "hardhat compile && tsc --noEmit",
     "build": "hardhat compile",
     "deploy:local": "hardhat run scripts/deploy.ts --network localhost",
+    "deploy:amoy": "hardhat run scripts/deploy.ts --network amoy",
+    "deploy:besu": "hardhat run scripts/deploy.ts --network besu",
+    "seed:demo": "hardhat run scripts/seed-demo.ts --network localhost",
+    "tally:check": "hardhat run scripts/tally-check.ts --network localhost",
     "coverage": "hardhat coverage",
     "abi": "hardhat run scripts/export-abi.ts"
   },

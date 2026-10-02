@@ -1,0 +1,2 @@
+# Demo-only Semaphore identities (PRIVATE key material). Never commit.
+.demo/
