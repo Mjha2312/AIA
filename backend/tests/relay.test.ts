@@ -5,7 +5,7 @@ import { Writable } from "node:stream";
 import { buildTestApp } from "./helpers.js";
 import { createRelayLogger, RELAY_REDACT_PATHS } from "../src/logger.js";
 import { computeVoteHash, NonceManager, SerialQueue, type SemaphoreProofJson } from "../src/chain/relay.js";
-import { TxTimeoutError, isNonceError, revertErrorForName } from "../src/chain/errors.js";
+import { TxTimeoutError, isNonceError, relayFailureSummary, revertErrorForName } from "../src/chain/errors.js";
 import { loadRelayDecodeInterface } from "../src/chain/artifacts.js";
 
 function proof(overrides: Partial<SemaphoreProofJson> = {}): SemaphoreProofJson {
@@ -163,17 +163,38 @@ describe("SerialQueue", () => {
 });
 
 describe("NonceManager", () => {
-  it("hands out sequential nonces and resyncs after reset", async () => {
+  function fakeProvider(networkNonce: () => number) {
+    return {
+      getTransactionCount: async () => networkNonce(),
+    } as unknown as Parameters<NonceManager["current"]>[0];
+  }
+
+  it("hands out the synced nonce and advances only on commit", async () => {
     const mgr = new NonceManager();
     let networkNonce = 7;
-    const provider = {
-      getTransactionCount: async () => networkNonce,
-    } as unknown as Parameters<NonceManager["take"]>[0];
-    expect(await mgr.take(provider, "0xabc")).toBe(7);
-    expect(await mgr.take(provider, "0xabc")).toBe(8);
+    const provider = fakeProvider(() => networkNonce);
+    expect(await mgr.current(provider, "0xabc")).toBe(7);
+    // Peeking twice without a broadcast keeps handing out the same nonce.
+    expect(await mgr.current(provider, "0xabc")).toBe(7);
+    mgr.commit();
+    expect(await mgr.current(provider, "0xabc")).toBe(8);
     mgr.reset();
     networkNonce = 12;
-    expect(await mgr.take(provider, "0xabc")).toBe(12);
+    expect(await mgr.current(provider, "0xabc")).toBe(12);
+  });
+
+  it("reuses the same nonce after a pre-broadcast failure (no poisoning)", async () => {
+    const mgr = new NonceManager();
+    const networkNonce = 7;
+    const provider = fakeProvider(() => networkNonce);
+    // First attempt takes nonce 7, fails before broadcast, resets.
+    expect(await mgr.current(provider, "0xabc")).toBe(7);
+    mgr.reset();
+    // Retry must reuse 7 (chain nonce never moved); the old take-then-advance
+    // code handed out 8 here and poisoned every later relay.
+    expect(await mgr.current(provider, "0xabc")).toBe(7);
+    mgr.commit();
+    expect(await mgr.current(provider, "0xabc")).toBe(8);
   });
 
   it("detects stale-nonce errors", () => {
@@ -183,8 +204,37 @@ describe("NonceManager", () => {
   });
 });
 
-describe("relay route logger privacy", () => {
-  it("redacts IPs, headers, and user agents", () => {
+describe("relayFailureSummary", () => {
+  it("keeps the revert selector and drops everything else", () => {
+    const err = Object.assign(new Error("execution reverted (unknown custom error)"), {
+      code: "CALL_EXCEPTION",
+      // Selector + fake 32-byte arg: only the 4-byte selector may surface.
+      data: `0xe2586bcc${"ab".repeat(32)}`,
+      transaction: { data: `0xdeadbeef${"cd".repeat(64)}` },
+    });
+    expect(relayFailureSummary(err)).toEqual({
+      code: "CALL_EXCEPTION",
+      selector: "0xe2586bcc",
+    });
+  });
+
+  it("never carries proof-shaped material", () => {
+    const proofBlob = `0x${"12".repeat(256)}`;
+    const err = Object.assign(new Error(`send failed ${proofBlob}`), {
+      transaction: { proof: { nullifier: "123456789".repeat(9) } },
+    });
+    const summary = relayFailureSummary(err);
+    expect(JSON.stringify(summary)).not.toContain("1212");
+    expect(JSON.stringify(summary)).not.toContain("123456789");
+  });
+
+  it("returns empty for non-errors", () => {
+    expect(relayFailureSummary(null)).toEqual({});
+    expect(relayFailureSummary("boom")).toEqual({});
+  });
+});
+
+describe("relay route logger privacy", () => {  it("redacts IPs, headers, and user agents", () => {
     const chunks: string[] = [];
     const stream = new Writable({
       write(chunk, _enc, cb) {
