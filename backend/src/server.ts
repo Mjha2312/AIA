@@ -9,7 +9,7 @@ import { PgRegistrationStore, InMemoryRegistrationStore } from "./store.js";
 import { WsHub } from "./ws.js";
 import { Indexer } from "./indexer/indexer.js";
 import { EthersEventSource } from "./indexer/source.js";
-import { PgIndexerStore } from "./indexer/store.js";
+import { InMemoryIndexerStore, PgIndexerStore } from "./indexer/store.js";
 import { artifactPaths, fileExists, loadDeployment, loadManagerInterface } from "./chain/artifacts.js";
 import { createRelayLogger, logger } from "./logger.js";
 
@@ -20,16 +20,19 @@ async function main(): Promise<void> {
   // Postgres is required in production; fall back to memory only so `dev`
   // still boots without docker (registration uniqueness is then process-local).
   let store;
+  let indexerStore;
   let poolAvailable = false;
   try {
     const pool = getPool(config.DATABASE_URL);
     await runMigrations(pool, defaultMigrationsDir());
     store = new PgRegistrationStore(pool);
+    indexerStore = new PgIndexerStore(pool);
     poolAvailable = true;
     logger.info("Postgres connected; migrations applied");
   } catch (err) {
-    logger.warn({ err }, "Postgres unavailable — using in-memory registration store (dev only)");
+    logger.warn({ err }, "Postgres unavailable — using in-memory stores (dev only)");
     store = new InMemoryRegistrationStore();
+    indexerStore = new InMemoryIndexerStore();
   }
 
   const kyc = selectKycProvider(config.MOCK_KYC);
@@ -47,7 +50,7 @@ async function main(): Promise<void> {
     txTimeoutMs: config.RELAY_TX_TIMEOUT_MS,
   });
 
-  const app = createApp({ config, kyc, registrar, store, relayer });
+  const app = createApp({ config, kyc, registrar, store, relayer, indexerStore });
   const server = app.listen(config.PORT, () => {
     logger.info(`backend listening on :${config.PORT}`);
   });
@@ -70,9 +73,8 @@ async function main(): Promise<void> {
         }
         const [iface, deployment] = await Promise.all([loadManagerInterface(), loadDeployment()]);
         if (!deployment.ElectionManager) throw new Error("ElectionManager address missing in deployment file");
-        const pool = getPool(config.DATABASE_URL);
         const source = new EthersEventSource(config.WS_RPC_URL, deployment.ElectionManager, iface);
-        indexer = new Indexer(source, new PgIndexerStore(pool), iface, hub, {
+        indexer = new Indexer(source, indexerStore, iface, hub, {
           fromBlock: config.INDEXER_FROM_BLOCK,
           fetchElectionDetails: (electionId) => relayer.getElectionDetails?.(electionId) ?? Promise.resolve(null),
         });

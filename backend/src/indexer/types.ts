@@ -33,3 +33,36 @@ export interface GroupMemberRow {
   logIndex: number;
   blockNumber: number;
 }
+
+/** Read-model election row (domain Election + indexer counters). */
+export interface ElectionRecord {
+  electionId: string;
+  constituencyId: string;
+  candidates: string[];
+  phase: number;
+  registered: number;
+  voted: number;
+}
+
+/** Stable pagination cursor over votes ordered by (blockNumber, logIndex). */
+export interface VotesCursor {
+  blockNumber: number;
+  logIndex: number;
+}
+
+export interface AuditRun {
+  id: number;
+  electionId: string;
+  evmTally: number[];
+  chainTally: number[];
+  match: boolean;
+  createdAt: Date | null;
+}
+
+export interface TableCounts {
+  elections: number;
+  votes: number;
+  members: number;
+  phaseChanges: number;
+  audits: number;
+}
