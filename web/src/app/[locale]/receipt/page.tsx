@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 
-import { PageStub } from '@/components/layout/page-stub';
+import { ReceiptLookup } from '@/components/receipt/receipt-lookup';
 
 export async function generateMetadata({
   params: { locale }
@@ -12,9 +12,14 @@ export async function generateMetadata({
   return { title: t('title'), description: t('stub') };
 }
 
-export default async function ReceiptPage({ params }: { params: { locale: string } }) {
+export default async function ReceiptPage({
+  params,
+  searchParams
+}: {
+  params: { locale: string };
+  searchParams: { nullifier?: string };
+}) {
   setRequestLocale(params.locale);
-  const t = await getTranslations({ locale: params.locale, namespace: 'receipt' });
 
-  return <PageStub title={t('title')} description={t('stub')} />;
+  return <ReceiptLookup initialNullifier={searchParams.nullifier} />;
 }
