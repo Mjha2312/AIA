@@ -62,6 +62,11 @@ export async function GET(request: Request, context: { params: { path?: Path } }
     return json(mockApi.getReceipt(decodeURIComponent(path[1] ?? '')));
   }
 
+  if (path[0] === 'elections' && path[2] === 'audits' && path.length === 3) {
+    const runs = mockApi.listAudits(path[1] ?? '');
+    return runs ? json(runs) : error(NOT_FOUND.code, 'Election not found.', 404);
+  }
+
   if (path[0] === 'ws' && path.length === 1) {
     const url = new URL(request.url);
     const since = Number(url.searchParams.get('since') ?? '0');

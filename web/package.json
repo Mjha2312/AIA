@@ -11,7 +11,13 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "i18n:check": "node scripts/i18n-check.mjs"
+    "i18n:check": "node scripts/i18n-check.mjs",
+    "abi": "node scripts/copy-abi.mjs",
+    "predev": "npm run abi",
+    "prebuild": "npm run abi",
+    "prelint": "npm run abi",
+    "pretypecheck": "npm run abi",
+    "pretest": "npm run abi"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.62.7",
@@ -19,6 +25,8 @@
     "next-intl": "^3.26.3",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
+    "react-qr-code": "^2.2.0",
+    "recharts": "^3.10.1",
     "viem": "^2.21.55",
     "wagmi": "^2.14.6",
     "zod": "^3.24.1"

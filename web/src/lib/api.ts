@@ -5,6 +5,7 @@ import {
   apiErrorEnvelopeSchema,
   auditRequestSchema,
   auditResponseSchema,
+  auditsSchema,
   chainEventBatchSchema,
   electionSchema,
   groupSchema,
@@ -18,6 +19,7 @@ import {
   txHashSchema,
   votesPageSchema,
   type AuditResponse,
+  type Audits,
   type ChainEventBatch,
   type Election,
   type Group,
@@ -180,6 +182,11 @@ export const api = {
       method: 'POST',
       body: jsonBody(auditRequestSchema.parse({ booths }))
     });
+  },
+
+  /** Backend `GET /elections/:id/audits` -> past shadow-audit runs. */
+  getAudits(electionId: string, signal?: AbortSignal): Promise<Audits> {
+    return request(apiUrl(`/elections/${electionId}/audits`), auditsSchema, { signal });
   },
 
   /**

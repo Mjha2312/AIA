@@ -5,5 +5,6 @@ export const queryKeys = {
   turnout: (electionId: string) => ['turnout', electionId] as const,
   votes: (electionId: string) => ['votes', electionId] as const,
   group: (electionId: string) => ['group', electionId] as const,
-  receipt: (nullifier: string) => ['receipt', nullifier] as const
+  receipt: (nullifier: string) => ['receipt', nullifier] as const,
+  audits: (electionId: string) => ['audits', electionId] as const
 };
