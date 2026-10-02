@@ -1,11 +1,11 @@
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import { Interface, type InterfaceAbi } from "ethers";
+import { backendRootDir } from "../paths.js";
 
 /** Locates the chain dev's artifacts (read-only from backend's perspective). */
 export function artifactPaths(): { managerAbiPath: string; semaphoreAbiPath: string; deploymentPath: string } {
-  const backendRoot = path.resolve(__dirname, "..", "..");
-  const repoRoot = path.resolve(backendRoot, "..");
+  const repoRoot = path.resolve(backendRootDir(), "..");
   return {
     managerAbiPath: path.join(repoRoot, "contracts", "abi", "ElectionManager.json"),
     semaphoreAbiPath: path.join(repoRoot, "contracts", "abi", "Semaphore.json"),
