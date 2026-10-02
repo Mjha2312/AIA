@@ -9,6 +9,7 @@ import { api, ApiError } from '@/lib/api';
 import { Phase, isVotingOpen, phaseMessageKey } from '@/lib/phases';
 import { queryKeys } from '@/lib/query-keys';
 import { loadStoredCommitment } from '@/lib/vote-identity';
+import { BallotStep, type CastResult } from './ballot-step';
 import { IdentityStep, KycStep, RegisterStep, type RegisterResult } from './vote-steps';
 
 /**
@@ -32,6 +33,7 @@ export function VoteFlow({ electionId }: { electionId: string }) {
   const [kycToken, setKycToken] = useState<string | null>(null);
   const [commitment, setCommitment] = useState<string | null>(null);
   const [registerResult, setRegisterResult] = useState<RegisterResult | null>(null);
+  const [castResult, setCastResult] = useState<CastResult | null>(null);
 
   // Device identity (if this browser registered before). Read after mount so
   // server rendering and the first client paint agree.
@@ -47,6 +49,14 @@ export function VoteFlow({ electionId }: { electionId: string }) {
     setStoredCommitment(loadStoredCommitment(electionId));
     void queryClient.invalidateQueries({ queryKey: queryKeys.election(electionId) });
     void queryClient.invalidateQueries({ queryKey: queryKeys.turnout(electionId) });
+    void queryClient.invalidateQueries({ queryKey: queryKeys.group(electionId) });
+  }
+
+  function handleVoted(result: CastResult): void {
+    setCastResult(result);
+    void queryClient.invalidateQueries({ queryKey: queryKeys.election(electionId) });
+    void queryClient.invalidateQueries({ queryKey: queryKeys.turnout(electionId) });
+    void queryClient.invalidateQueries({ queryKey: queryKeys.votes(electionId) });
     void queryClient.invalidateQueries({ queryKey: queryKeys.group(electionId) });
   }
 
@@ -98,17 +108,46 @@ export function VoteFlow({ electionId }: { electionId: string }) {
               </li>
             ))}
           </ol>
-          <h3 className="mt-6 text-base font-bold text-navy-900">{t('vote.comingTitle')}</h3>
-          <p className="prose-civic mt-1 text-sm">{t('vote.comingBody')}</p>
         </section>
       ) : null}
 
-      {mounted && isVotingOpen(election.phase) && storedCommitment ? (
-        <section aria-labelledby="resume-heading" className="card mt-6">
-          <h2 id="resume-heading" className="text-lg font-bold text-navy-900">
-            {t('vote.resumeTitle')}
+      {mounted && isVotingOpen(election.phase) && storedCommitment && !castResult ? (
+        <section aria-labelledby="ballot-pick-section" className="card mt-6">
+          <BallotStep
+            electionId={election.id}
+            candidates={election.candidates}
+            onVoted={handleVoted}
+          />
+        </section>
+      ) : null}
+
+      {castResult ? (
+        <section aria-labelledby="voted-heading" className="card mt-6">
+          <h2 id="voted-heading" className="text-lg font-bold text-green-800">
+            {t('vote.voteDone')}
           </h2>
-          <p className="prose-civic mt-2 text-sm">{t('vote.resumeBody')}</p>
+          <p className="prose-civic mt-2 text-sm">{t('vote.voteDoneBody')}</p>
+          <dl className="mt-4 space-y-3 text-sm">
+            <div>
+              <dt className="font-semibold text-navy-900">{t('vote.voteHashLabel')}</dt>
+              <dd className="mt-1 break-all font-mono">{castResult.voteHash}</dd>
+            </div>
+            <div>
+              <dt className="font-semibold text-navy-900">{t('vote.txHashLabel')}</dt>
+              <dd className="mt-1 break-all font-mono">{castResult.txHash}</dd>
+            </div>
+            <div>
+              <dt className="font-semibold text-navy-900">{t('vote.nullifierLabel')}</dt>
+              <dd className="mt-1 break-all font-mono">{castResult.nullifier}</dd>
+            </div>
+          </dl>
+          <p className="prose-civic mt-2 text-sm">{t('vote.nullifierHint')}</p>
+          <Link
+            href={`/receipt?nullifier=${encodeURIComponent(castResult.nullifier)}`}
+            className="btn-secondary mt-4 inline-block"
+          >
+            {t('vote.viewReceipt')}
+          </Link>
         </section>
       ) : null}
 
