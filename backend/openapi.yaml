@@ -1,0 +1,578 @@
+openapi: 3.0.3
+info:
+  title: AIA Vote Backend API
+  version: 1.0.0
+  description: |
+    AIA Vote backend (`/api`, JSON) per `docs/SPEC.md`, plus prototype
+    extensions marked `(ext)`.
+
+    Election phases: Setup=0, Registration=1, Voting=2, Tallying=3, Finalized=4.
+    All uint256 values travel as decimal strings. Errors look like
+    `{ "error": { "code": "...", "message": "..." } }`.
+
+    WebSocket `/ws` (not describable in OpenAPI 3.0): same origin as this API,
+    pushes `{ "type": "VoteCast"|"PhaseChanged"|"VoterRegistered", ... }`
+    with chain-public fields only.
+servers:
+  - url: http://localhost:4000
+    description: Local backend (PORT from .env)
+tags:
+  - name: elections
+  - name: receipts
+  - name: kyc
+  - name: relay
+  - name: audit
+  - name: docs
+paths:
+  /api/health:
+    get:
+      tags: [docs]
+      summary: Liveness probe
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok]
+                properties:
+                  ok:
+                    type: boolean
+                    example: true
+  /api/elections:
+    get:
+      tags: [elections]
+      summary: List elections
+      responses:
+        "200":
+          description: Election list (SPEC Election[])
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Election"
+  /api/elections/{id}:
+    get:
+      tags: [elections]
+      summary: Election detail (+ tally when phase >= Tallying)
+      parameters:
+        - $ref: "#/components/parameters/ElectionId"
+      responses:
+        "200":
+          description: Election detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ElectionDetail"
+        "400":
+          $ref: "#/components/responses/InvalidRequest"
+        "404":
+          $ref: "#/components/responses/ElectionNotFound"
+  /api/elections/{id}/turnout:
+    get:
+      tags: [elections]
+      summary: Registered/voted turnout
+      parameters:
+        - $ref: "#/components/parameters/ElectionId"
+      responses:
+        "200":
+          description: Turnout (turnoutPct rounded to 2 decimals)
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [registered, voted, turnoutPct]
+                properties:
+                  registered:
+                    type: integer
+                  voted:
+                    type: integer
+                  turnoutPct:
+                    type: number
+                    example: 66.67
+        "404":
+          $ref: "#/components/responses/ElectionNotFound"
+  /api/elections/{id}/votes:
+    get:
+      tags: [elections]
+      summary: "Votes with cursor pagination (stable order: blockNumber, logIndex)"
+      parameters:
+        - $ref: "#/components/parameters/ElectionId"
+        - name: cursor
+          in: query
+          required: false
+          description: Opaque cursor from a previous nextCursor
+          schema:
+            type: string
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 50
+      responses:
+        "200":
+          description: Vote page
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items, nextCursor]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/VoteRecord"
+                  nextCursor:
+                    type: string
+                    nullable: true
+                    description: Pass as ?cursor= for the next page; null when done
+        "400":
+          $ref: "#/components/responses/InvalidRequest"
+        "404":
+          $ref: "#/components/responses/ElectionNotFound"
+  /api/elections/{id}/group:
+    get:
+      tags: [elections]
+      summary: Semaphore group identity commitments (leaf_index order)
+      parameters:
+        - $ref: "#/components/parameters/ElectionId"
+      responses:
+        "200":
+          description: Group members for client-side Merkle tree
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [members]
+                properties:
+                  members:
+                    type: array
+                    items:
+                      type: string
+                      description: Decimal uint256 identity commitment
+        "404":
+          $ref: "#/components/responses/ElectionNotFound"
+  /api/elections/{id}/audit:
+    post:
+      tags: [audit]
+      summary: "Shadow-audit chain tally vs booth EVM counts (prototype: x-admin-key)"
+      description: |
+        Prototype gate: requires the `x-admin-key` header matching ADMIN_API_KEY.
+        Production must use ECI-signed audit submissions instead.
+        Each run is persisted and listed at GET /elections/{id}/audits (ext).
+      parameters:
+        - $ref: "#/components/parameters/ElectionId"
+        - name: x-admin-key
+          in: header
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [booths]
+              properties:
+                booths:
+                  type: array
+                  minItems: 1
+                  items:
+                    type: object
+                    required: [boothId, counts]
+                    properties:
+                      boothId:
+                        type: string
+                      counts:
+                        type: array
+                        minItems: 1
+                        items:
+                          type: integer
+                          minimum: 0
+      responses:
+        "200":
+          description: Audit verdict (diff = chainTally - evmTally per candidate)
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [match, chainTally, evmTally, diff]
+                properties:
+                  match:
+                    type: boolean
+                  chainTally:
+                    type: array
+                    items:
+                      type: integer
+                  evmTally:
+                    type: array
+                    items:
+                      type: integer
+                  diff:
+                    type: array
+                    items:
+                      type: integer
+        "400":
+          $ref: "#/components/responses/InvalidRequest"
+        "401":
+          description: Missing/invalid x-admin-key
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "404":
+          $ref: "#/components/responses/ElectionNotFound"
+        "503":
+          description: ADMIN_API_KEY unset on the server
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /api/elections/{id}/audits:
+    get:
+      tags: [audit]
+      summary: Past audit runs for the election (ext — prototype addition)
+      parameters:
+        - $ref: "#/components/parameters/ElectionId"
+      responses:
+        "200":
+          description: Audit history
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [audits]
+                properties:
+                  audits:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/AuditRun"
+        "404":
+          $ref: "#/components/responses/ElectionNotFound"
+  /api/receipts/{nullifier}:
+    get:
+      tags: [receipts]
+      summary: Vote receipt lookup by nullifier
+      parameters:
+        - name: nullifier
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: "^\\d+$"
+      responses:
+        "200":
+          description: "{ found: true, ... } or { found: false }"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Receipt"
+  /api/kyc/start:
+    post:
+      tags: [kyc]
+      summary: Begin KYC for an election
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [electionId]
+              properties:
+                electionId:
+                  $ref: "#/components/schemas/Uint256"
+      responses:
+        "200":
+          description: Session + redirect to the KYC provider (mock page when MOCK_KYC=true)
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [sessionId, redirectUrl]
+                properties:
+                  sessionId:
+                    type: string
+                  redirectUrl:
+                    type: string
+        "400":
+          $ref: "#/components/responses/InvalidRequest"
+  /api/kyc/complete:
+    post:
+      tags: [kyc]
+      summary: Complete KYC, mint short-lived kycToken JWT
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [sessionId]
+              properties:
+                sessionId:
+                  type: string
+                mockEpic:
+                  type: string
+                  description: EPIC-like "SS/DD/DDD/DDDDDD" (mock provider only)
+      responses:
+        "200":
+          description: Short-lived JWT carrying subjectId + electionId
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [kycToken]
+                properties:
+                  kycToken:
+                    type: string
+        "400":
+          $ref: "#/components/responses/InvalidRequest"
+        "404":
+          description: Unknown/expired session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /api/register:
+    post:
+      tags: [kyc]
+      summary: Register a Semaphore identity commitment for an election
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [kycToken, electionId, identityCommitment]
+              properties:
+                kycToken:
+                  type: string
+                electionId:
+                  $ref: "#/components/schemas/Uint256"
+                identityCommitment:
+                  $ref: "#/components/schemas/Uint256"
+      responses:
+        "200":
+          description: Registered on-chain
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [txHash]
+                properties:
+                  txHash:
+                    type: string
+        "401":
+          description: Bad/expired token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "409":
+          description: Already registered (one registration per person per election)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /api/relay/vote:
+    post:
+      tags: [relay]
+      summary: Relay a Semaphore vote (anyone may relay; no IP logging)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [electionId, candidateIndex, proof]
+              properties:
+                electionId:
+                  $ref: "#/components/schemas/Uint256"
+                candidateIndex:
+                  type: integer
+                  minimum: 0
+                proof:
+                  $ref: "#/components/schemas/SemaphoreProof"
+      responses:
+        "200":
+          description: Vote mined
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [txHash, voteHash]
+                properties:
+                  txHash:
+                    type: string
+                  voteHash:
+                    type: string
+        "400":
+          $ref: "#/components/responses/InvalidRequest"
+        "404":
+          $ref: "#/components/responses/ElectionNotFound"
+        "409":
+          description: WRONG_PHASE or ALREADY_VOTED
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "504":
+          description: Vote tx not mined within RELAY_TX_TIMEOUT_MS
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+components:
+  parameters:
+    ElectionId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        pattern: "^\\d+$"
+  responses:
+    InvalidRequest:
+      description: Validation failure
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ApiError"
+    ElectionNotFound:
+      description: Unknown election id
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ApiError"
+  schemas:
+    Uint256:
+      type: string
+      pattern: "^\\d+$"
+      description: uint256 as a decimal string
+      example: "12345678901234567890"
+    Phase:
+      type: integer
+      enum: [0, 1, 2, 3, 4]
+      description: Setup=0, Registration=1, Voting=2, Tallying=3, Finalized=4
+    Election:
+      type: object
+      required: [id, constituencyId, candidates, phase]
+      properties:
+        id:
+          type: string
+        constituencyId:
+          type: string
+        candidates:
+          type: array
+          items:
+            type: string
+        phase:
+          $ref: "#/components/schemas/Phase"
+    ElectionDetail:
+      allOf:
+        - $ref: "#/components/schemas/Election"
+        - type: object
+          required: [registeredCount, votedCount]
+          properties:
+            registeredCount:
+              type: integer
+            votedCount:
+              type: integer
+            tally:
+              type: array
+              items:
+                type: integer
+              description: Present only when phase >= Tallying(3)
+    VoteRecord:
+      type: object
+      required: [voteHash, nullifier, candidateIndex, txHash, blockNumber, timestamp]
+      properties:
+        voteHash:
+          type: string
+        nullifier:
+          $ref: "#/components/schemas/Uint256"
+        candidateIndex:
+          type: integer
+        txHash:
+          type: string
+        blockNumber:
+          type: integer
+        timestamp:
+          type: string
+          format: date-time
+          nullable: true
+    Receipt:
+      type: object
+      required: [found]
+      properties:
+        found:
+          type: boolean
+        voteHash:
+          type: string
+        txHash:
+          type: string
+        blockNumber:
+          type: integer
+        timestamp:
+          type: string
+          format: date-time
+          nullable: true
+    SemaphoreProof:
+      type: object
+      required: [merkleTreeDepth, merkleTreeRoot, nullifier, message, scope, points]
+      properties:
+        merkleTreeDepth:
+          $ref: "#/components/schemas/Uint256"
+        merkleTreeRoot:
+          $ref: "#/components/schemas/Uint256"
+        nullifier:
+          $ref: "#/components/schemas/Uint256"
+        message:
+          $ref: "#/components/schemas/Uint256"
+        scope:
+          $ref: "#/components/schemas/Uint256"
+        points:
+          type: array
+          minItems: 8
+          maxItems: 8
+          items:
+            $ref: "#/components/schemas/Uint256"
+    AuditRun:
+      type: object
+      required: [id, electionId, evmTally, chainTally, match, createdAt]
+      properties:
+        id:
+          type: integer
+        electionId:
+          type: string
+        evmTally:
+          type: array
+          items:
+            type: integer
+        chainTally:
+          type: array
+          items:
+            type: integer
+        match:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+          nullable: true
+    ApiError:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+            message:
+              type: string

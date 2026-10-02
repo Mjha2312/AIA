@@ -17,6 +17,8 @@ const envSchema = z.object({
     .default("true")
     .transform((v) => v.toLowerCase() === "true"),
   INDEXER_FROM_BLOCK: z.coerce.number().int().nonnegative().default(0),
+  ADMIN_API_KEY: z.string().default(""),
+  WEB_APP_URL: z.string().default("http://localhost:3000"),
   SERVER_SECRET: z.string().min(1, "SERVER_SECRET is required"),
   JWT_SECRET: z.string().min(1, "JWT_SECRET is required"),
   MOCK_KYC: z

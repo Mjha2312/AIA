@@ -1,8 +1,8 @@
 # backend — API + relayer + indexer (owner: API dev)
 
 Express + TypeScript API for AIA Vote per `docs/SPEC.md` (base path `/api`).
-Implements **KYC + registration, vote relay, chain indexer, and `/ws`
-broadcasts**; elections/audit/tally read endpoints come later.
+Implements **KYC + registration, vote relay, chain indexer, `/ws`
+broadcasts, public read endpoints, and the EVM shadow-audit**.
 
 ## Run
 
@@ -50,6 +50,64 @@ npm run build   # tsc -> dist/ ; run with npm start
     manager, so concurrent requests never collide on nonces.
 
 Errors look like `{ error: { code, message } }` with proper HTTP status.
+
+## Public reads (backed by the indexer tables)
+
+- `GET /api/elections` -> `Election[]` (`id`, `constituencyId`, `candidates`, `phase`)
+- `GET /api/elections/:id` -> detail + `registeredCount`/`votedCount`, plus
+  `tally` **only when phase >= Tallying(3)** (computed from the `votes` table)
+- `GET /api/elections/:id/turnout` -> `{ registered, voted, turnoutPct }`
+  (`turnoutPct` rounded to 2 decimals, 0 when nobody is registered)
+- `GET /api/elections/:id/votes?cursor=&limit=` (default 50, max 200) ->
+  `{ items: [{ voteHash, nullifier, candidateIndex, txHash, blockNumber,
+  timestamp }], nextCursor }`, stable order by `(blockNumber, logIndex)`
+- `GET /api/elections/:id/group` -> `{ members: string[] }` (leaf_index order,
+  for the client-side Merkle tree)
+- `GET /api/receipts/:nullifier` -> `{ found: true, voteHash, txHash,
+  blockNumber, timestamp }` or `{ found: false }`
+- Full contract in `backend/openapi.yaml`; browse at `/api/docs` (Swagger UI).
+
+## Shadow-audit
+
+```bash
+curl -X POST $BASE/elections/1/audit -H 'Content-Type: application/json' \
+  -H "x-admin-key: $ADMIN_API_KEY" -d '{
+    "booths": [
+      {"boothId": "b1", "counts": [120, 98]},
+      {"boothId": "b2", "counts": [45, 51]}
+    ]
+  }'
+# -> {"match":true,"chainTally":[165,149],"evmTally":[165,149],"diff":[0,0]}
+```
+
+- Booth counts are summed per candidate and compared to the chain tally from
+  the `votes` table; every booth's `counts` length must equal the candidate
+  count (`400 AUDIT_SHAPE_MISMATCH` otherwise). Each run is persisted
+  (`audit_runs` table) and listed at `GET /api/elections/:id/audits`.
+- Prototype gate: `x-admin-key` must match `ADMIN_API_KEY` (`401
+  INVALID_ADMIN_KEY`; `503 AUDIT_DISABLED` when unset). **Production must use
+  ECI-signed audit submissions instead** — the shared-secret header is a
+  stand-in, documented here and in `openapi.yaml`.
+
+## Mock KYC page
+
+With `MOCK_KYC=true`, `POST /api/kyc/start` returns
+`redirectUrl: /mock-kyc?sessionId=...`. That page (`GET /mock-kyc`) is plain
+server-rendered HTML: the voter types a mock EPIC, the page calls
+`POST /api/kyc/complete`, then redirects to
+`$WEB_APP_URL/kyc/callback?sessionId=...` with the short-lived `kycToken` in
+the URL **fragment** (fragments are never sent to or logged by any server).
+`MOCK_KYC=false` answers 404.
+
+## One-shot replay
+
+```bash
+npm run dev:replay   # needs Postgres + WS_RPC_URL with seeded elections
+```
+
+Runs migrations, backfills the indexer once (idempotent — re-runs only fill
+gaps), prints per-table row counts (`elections`, `votes`, members,
+`phase_changes`, `audits`) plus the checkpoint, and exits.
 
 ## curl examples (mock KYC)
 
@@ -101,7 +159,9 @@ curl -X POST $BASE/relay/vote -H 'Content-Type: application/json' -d '{
   re-backfill the gap. Every write is idempotent on `(txHash, logIndex)`.
 - Env knobs (all defaulted; see `src/config.ts`): `WS_RPC_URL`
   (`ws://localhost:8545`), `RELAYER_PRIVATE_KEY`, `RELAY_TX_TIMEOUT_MS`
-  (60000), `INDEXER_ENABLED` (true), `INDEXER_FROM_BLOCK` (0).
+  (60000), `INDEXER_ENABLED` (true), `INDEXER_FROM_BLOCK` (0),
+  `ADMIN_API_KEY` ("", audit disabled until set), `WEB_APP_URL`
+  (`http://localhost:3000`, mock-KYC return target).
 - Connect: `new WebSocket("ws://localhost:4000/ws")`. Payloads are
   chain-public data only (ids, counts, hashes) — nothing KYC-linkable.
 

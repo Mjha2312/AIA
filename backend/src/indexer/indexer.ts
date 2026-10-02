@@ -49,6 +49,15 @@ export class Indexer {
     if (!this.stopped) await this.subscribeLive();
   }
 
+  /**
+   * Backfill from the stored checkpoint (or fromBlock) to head without
+   * subscribing live. Used by `npm run dev:replay` for one-shot replays.
+   */
+  async runOnce(): Promise<void> {
+    this.stopped = false;
+    await this.backfillToHead();
+  }
+
   async stop(): Promise<void> {
     this.stopped = true;
     if (this.retryTimer) {

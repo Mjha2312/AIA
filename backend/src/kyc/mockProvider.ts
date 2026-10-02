@@ -23,8 +23,9 @@ export class MockKycProvider implements KycProvider {
   async start(electionId: string): Promise<{ sessionId: string; redirectUrl: string }> {
     const sessionId = randomUUID();
     this.sessions.set(sessionId, { electionId, createdAt: Date.now() });
-    // Local mock page path (frontend implements /kyc/mock?session=...).
-    return { sessionId, redirectUrl: `/kyc/mock?session=${sessionId}&election=${electionId}` };
+    // Server-rendered mock page (GET /mock-kyc?sessionId=...), enabled only
+    // when MOCK_KYC=true. Handles EPIC entry + return to the web app.
+    return { sessionId, redirectUrl: `/mock-kyc?sessionId=${sessionId}` };
   }
 
   async complete(sessionId: string, input: { mockEpic?: string }): Promise<{ subjectId: string }> {
