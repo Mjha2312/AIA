@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 
-import { PageStub } from '@/components/layout/page-stub';
+import { ExplorerDashboard } from '@/components/explorer/explorer-dashboard';
 
 export async function generateMetadata({
   params: { locale }
@@ -14,7 +14,10 @@ export async function generateMetadata({
 
 export default async function ExplorerPage({ params }: { params: { locale: string } }) {
   setRequestLocale(params.locale);
-  const t = await getTranslations({ locale: params.locale, namespace: 'explorer' });
 
-  return <PageStub title={t('title')} description={t('stub')} />;
+  return (
+    <section>
+      <ExplorerDashboard />
+    </section>
+  );
 }

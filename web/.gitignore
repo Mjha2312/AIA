@@ -4,3 +4,6 @@
 # Local scratch (screenshots live in docs/screenshots/ and are committed)
 tmp-*/
 dev.log
+
+# Generated contract artifacts (rebuilt by `npm run abi`)
+src/abi/

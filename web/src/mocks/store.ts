@@ -18,7 +18,7 @@ import type { ChainEvent, Receipt, Vote } from '@/lib/schemas';
 const VOTING_ELECTION_INDEX = 0;
 const REGISTRATION_ELECTION_INDEX = 1;
 const SIMULATION_INTERVAL_MS = 2500;
-const VOTES_PAGE_SIZE = 25;
+const VOTES_PAGE_SIZE = 200;
 
 interface ElectionSeed {
   constituencyId: string;
@@ -86,11 +86,21 @@ interface StoredEvent {
   event: ChainEvent;
 }
 
+interface StoredAuditRun {
+  id: string;
+  electionId: string;
+  evmTally: number[];
+  chainTally: number[];
+  match: boolean;
+  createdAt: number;
+}
+
 interface MockStore {
   elections: MockElection[];
   votes: Map<string, Vote[]>;
   receipts: Map<string, Receipt>;
   events: StoredEvent[];
+  auditRuns: StoredAuditRun[];
   kycSessions: Map<string, string>;
   nextNullifierSeq: number;
   simulationStep: number;
@@ -109,6 +119,7 @@ const store: MockStore = {
   votes: new Map(),
   receipts: new Map(),
   events: [],
+  auditRuns: [],
   kycSessions: new Map(),
   nextNullifierSeq: 0,
   simulationStep: 0,
@@ -175,6 +186,40 @@ function seedEvents(): void {
 }
 
 seedEvents();
+
+function seedAuditRuns(): void {
+  // One clean run (finalized election) and one run with a booth-reporting
+  // error (voting election), so the shadow-audit view has both shapes.
+  const finalized = store.elections.find((entry) => entry.phase === Phase.Finalized);
+  if (finalized) {
+    const chainTally = tallyFor(finalized);
+    store.auditRuns.push({
+      id: 'audit-seed-final',
+      electionId: finalized.id,
+      evmTally: [...chainTally],
+      chainTally,
+      match: true,
+      createdAt: 1_760_002_400
+    });
+  }
+  const voting = store.elections[VOTING_ELECTION_INDEX];
+  if (voting) {
+    const chainTally = tallyFor(voting);
+    const evmTally = [...chainTally];
+    evmTally[0] = Math.max(0, (evmTally[0] ?? 0) - 3);
+    evmTally[1] = (evmTally[1] ?? 0) + 3;
+    store.auditRuns.push({
+      id: 'audit-seed-voting',
+      electionId: voting.id,
+      evmTally,
+      chainTally,
+      match: false,
+      createdAt: 1_760_001_200
+    });
+  }
+}
+
+seedAuditRuns();
 
 function tallyFor(election: MockElection): number[] {
   const votes = votesFor(election.id);
@@ -327,7 +372,25 @@ export const mockApi = {
       });
     }
     const diff = chainTally.map((count, index) => count - (evmTally[index] ?? 0));
-    return { match: diff.every((value) => value === 0), chainTally, evmTally, diff };
+    const match = diff.every((value) => value === 0);
+    store.auditRuns.unshift({
+      id: `audit-${store.auditRuns.length + 1}`,
+      electionId,
+      evmTally,
+      chainTally,
+      match,
+      createdAt: Math.floor(Date.now() / 1000)
+    });
+    return { match, chainTally, evmTally, diff };
+  },
+
+  listAudits(electionId: string) {
+    if (!store.elections.some((entry) => entry.id === electionId)) return null;
+    return {
+      audits: store.auditRuns
+        .filter((run) => run.electionId === electionId)
+        .map((run) => ({ ...run }))
+    };
   },
 
   /**

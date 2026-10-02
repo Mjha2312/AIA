@@ -11,14 +11,16 @@ import { queryKeys } from '@/lib/query-keys';
 /**
  * Live turnout. Uses the one subscription API in `src/lib/live.ts`, which is a
  * WebSocket against the backend and polling against `/api-mock` — the numbers
- * below therefore move in both modes.
+ * below therefore move in both modes. `pollIntervalMs` adds a plain turnout
+ * re-poll as a fallback for transports that silently drop.
  */
-export function LiveTurnout({ electionId }: { electionId: string }) {
+export function LiveTurnout({ electionId, pollIntervalMs }: { electionId: string; pollIntervalMs?: number }) {
   const t = useTranslations();
   const format = useFormatter();
   const { data, refetch } = useQuery({
     queryKey: queryKeys.turnout(electionId),
-    queryFn: ({ signal }) => api.getTurnout(electionId, signal)
+    queryFn: ({ signal }) => api.getTurnout(electionId, signal),
+    refetchInterval: pollIntervalMs ?? false
   });
 
   useEffect(

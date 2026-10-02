@@ -3,6 +3,7 @@ import { injected } from 'wagmi/connectors';
 import { hardhat } from 'wagmi/chains';
 import type { Chain } from 'viem';
 
+import { hardhatDemoConnector, isDemoWalletOffered } from './demo-connector';
 import { CHAIN_ID, RPC_URL } from './env';
 
 /**
@@ -14,7 +15,7 @@ const localChain: Chain = { ...hardhat, id: CHAIN_ID };
 
 export const wagmiConfig = createConfig({
   chains: [localChain],
-  connectors: [injected()],
+  connectors: [injected(), ...(isDemoWalletOffered() ? [hardhatDemoConnector()] : [])],
   ssr: true,
   transports: {
     [localChain.id]: http(RPC_URL)

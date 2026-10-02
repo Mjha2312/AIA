@@ -15,6 +15,35 @@ export const uint256Schema = z.string().regex(/^\d+$/, 'expected a decimal uint2
 
 export const hashSchema = z.string().regex(/^0x[0-9a-fA-F]{64}$/, 'expected a 32-byte hex string');
 
+/**
+ * Block timestamps arrive as epoch seconds from the mock API and as ISO-8601
+ * strings from the real backend (`blockTimestamp.toISOString()`). Accept both
+ * and normalise to epoch seconds so the rest of the app has one shape.
+ */
+const epochSecondsSchema = z.union([z.number().int().nonnegative(), z.string()]).transform((value, ctx) => {
+  if (typeof value === 'number') return value;
+  const parsed = Math.floor(Date.parse(value) / 1000);
+  if (!Number.isFinite(parsed) || parsed < 0) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, message: `invalid timestamp "${value}"` });
+    return 0;
+  }
+  return parsed;
+});
+
+/** Nullable block timestamp; missing keys (e.g. `{ found: false }`) mean null. */
+const nullableEpochSecondsSchema = epochSecondsSchema
+  .nullish()
+  .transform((value): number | null => value ?? null);
+
+const nullableHashSchema = hashSchema.nullish().transform((value): string | null => value ?? null);
+
+const nullableBlockNumberSchema = z
+  .number()
+  .int()
+  .nonnegative()
+  .nullish()
+  .transform((value): number | null => value ?? null);
+
 export const addressSchema = z.string().regex(/^0x[0-9a-fA-F]{40}$/, 'expected a 20-byte hex address');
 
 const phaseNameSchema = z.enum(PHASE_NAMES);
@@ -61,7 +90,7 @@ export const voteSchema = z.object({
   candidateIndex: z.number().int().nonnegative(),
   txHash: hashSchema,
   blockNumber: z.number().int().nonnegative(),
-  timestamp: z.number().int().nonnegative()
+  timestamp: epochSecondsSchema
 });
 
 export type Vote = z.infer<typeof voteSchema>;
@@ -83,10 +112,10 @@ export type Group = z.infer<typeof groupSchema>;
 /** SPEC: `GET /receipts/:nullifier` -> `{ found, ... }`. */
 export const receiptSchema = z.object({
   found: z.boolean(),
-  voteHash: hashSchema.nullable(),
-  txHash: hashSchema.nullable(),
-  blockNumber: z.number().int().nonnegative().nullable(),
-  timestamp: z.number().int().nonnegative().nullable()
+  voteHash: nullableHashSchema,
+  txHash: nullableHashSchema,
+  blockNumber: nullableBlockNumberSchema,
+  timestamp: nullableEpochSecondsSchema
 });
 
 export type Receipt = z.infer<typeof receiptSchema>;
@@ -195,6 +224,29 @@ export const apiErrorEnvelopeSchema = z.object({
 });
 
 export type ApiErrorEnvelope = z.infer<typeof apiErrorEnvelopeSchema>;
+
+/**
+ * Backend `GET /elections/:id/audits` (added after the shared SPEC froze, see
+ * `backend/src/routes/audit.ts`): past shadow-audit runs for one election.
+ * `createdAt` is an ISO-8601 string from the backend and epoch seconds from
+ * the mock API; both normalise to epoch seconds.
+ */
+export const auditRunSchema = z.object({
+  id: z.union([z.string().min(1), z.number().int().nonnegative()]).transform((value) => String(value)),
+  electionId: uint256Schema,
+  evmTally: z.array(z.number().int().nonnegative()),
+  chainTally: z.array(z.number().int().nonnegative()),
+  match: z.boolean(),
+  createdAt: nullableEpochSecondsSchema
+});
+
+export type AuditRun = z.infer<typeof auditRunSchema>;
+
+export const auditsSchema = z.object({
+  audits: z.array(auditRunSchema)
+});
+
+export type Audits = z.infer<typeof auditsSchema>;
 
 /** SPEC: identityCommitment is a Poseidon hash, rendered as 0x-hex. */
 export const identityCommitmentSchema = z.string().regex(/^0x[0-9a-fA-F]{64}$/);
