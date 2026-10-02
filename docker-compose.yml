@@ -1,0 +1,18 @@
+services:
+  postgres:
+    image: postgres:16
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-aiavote}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-aiavote}
+      POSTGRES_DB: ${POSTGRES_DB:-aiavote}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+    # Note: hardhat node is run via npm script (cd contracts && npm run node),
+    # not via docker. See README.md quickstart.
+
+volumes:
+  pgdata:

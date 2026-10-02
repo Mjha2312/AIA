@@ -1,0 +1,25 @@
+# Secrets / env
+.env
+.env.*
+!.env.example
+
+# Deps
+node_modules/
+
+# Builds
+dist/
+build/
+.next/
+out/
+artifacts/
+cache/
+typechain-types/
+
+# Logs / OS
+*.log
+.DS_Store
+
+# Hardhat
+coverage/
+coverage.json
+gas-report.txt

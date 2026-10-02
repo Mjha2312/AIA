@@ -1,0 +1,47 @@
+name: ci
+
+on:
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        package: [contracts, backend, web]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check package exists
+        id: check
+        run: |
+          if [ -f "${{ matrix.package }}/package.json" ]; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/setup-node@v4
+        if: steps.check.outputs.exists == 'true'
+        with:
+          node-version: 20
+
+      - name: Install
+        if: steps.check.outputs.exists == 'true'
+        run: npm install
+        working-directory: ${{ matrix.package }}
+
+      - name: Lint
+        if: steps.check.outputs.exists == 'true'
+        run: npm run lint --if-present
+        working-directory: ${{ matrix.package }}
+
+      - name: Test
+        if: steps.check.outputs.exists == 'true'
+        run: npm test --if-present
+        working-directory: ${{ matrix.package }}
+
+      - name: Build
+        if: steps.check.outputs.exists == 'true'
+        run: npm run build --if-present
+        working-directory: ${{ matrix.package }}
