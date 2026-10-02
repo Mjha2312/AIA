@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 // Skip notices below are intentional console output for this file only.
 /* eslint-disable no-console */
 import request from "supertest";
-import { Contract, HDNodeWallet, Interface, JsonRpcProvider, Mnemonic, parseEther, Wallet, type AbstractSigner, type InterfaceAbi } from "ethers";
+import { Contract, HDNodeWallet, Interface, JsonRpcProvider, Mnemonic, parseEther, Wallet, type AbstractSigner, type InterfaceAbi, type JsonRpcSigner } from "ethers";
 import { buildTestApp } from "./helpers.js";
 import { createApp } from "../src/app.js";
 import { EthersRelayer, computeVoteHash } from "../src/chain/relay.js";
@@ -82,8 +82,8 @@ async function runAgainstNode(
     isOwner(addr: string): Promise<boolean>;
     txCount(): Promise<bigint>;
   };
-  const multisig = new Contract(deployment.ECIMultiSig, multisigIface, signers[0]) as Multisig;
-  const manager = new Contract(deployment.ElectionManager, managerIface, signers[0]);
+  const multisig = new Contract(deployment.ECIMultiSig, multisigIface, provider) as Multisig;
+  const manager = new Contract(deployment.ElectionManager, managerIface, provider);
 
   const threshold = Number(await multisig.threshold());
   const owners: HDNodeWallet[] = [];
@@ -95,12 +95,22 @@ async function runAgainstNode(
     console.info("integration: multisig owners are not local accounts — skipping");
     return;
   }
+  // Write through the node's unlocked accounts so nonces are assigned
+  // server-side. Locally-signed back-to-back txs flake on automining nodes:
+  // eth_getTransactionCount can report a stale value right after a block is
+  // mined, so the next tx reuses a nonce ("Nonce too low ... can't be queued
+  // when automining"). HD wallets below are address sources only.
+  const approvers: JsonRpcSigner[] = [];
+  for (const o of owners) approvers.push(await provider.getSigner(o.address));
 
   const registrarAddr = (await manager.getFunction("registrar")()) as string;
-  let registrar: AbstractSigner | undefined = signers.find(
+  const localRegistrar = signers.find(
     (s) => s.address.toLowerCase() === registrarAddr.toLowerCase(),
   );
-  if (!registrar && process.env.REGISTRAR_PRIVATE_KEY) {
+  let registrar: AbstractSigner | undefined;
+  if (localRegistrar) {
+    registrar = await provider.getSigner(registrarAddr);
+  } else if (process.env.REGISTRAR_PRIVATE_KEY) {
     registrar = new Wallet(process.env.REGISTRAR_PRIVATE_KEY, provider);
   }
   if (!registrar) {
@@ -111,14 +121,14 @@ async function runAgainstNode(
   // Fund a fresh wallet for the backend relayer under test.
   const relayerKey = Wallet.createRandom().privateKey;
   const relayerAddr = new Wallet(relayerKey).address;
-  await (await signers[0].sendTransaction({ to: relayerAddr, value: parseEther("1") })).wait();
+  await (await approvers[0].sendTransaction({ to: relayerAddr, value: parseEther("1") })).wait();
 
   const multisigExec = async (target: string, data: string): Promise<void> => {
     const txId = await multisig.txCount();
-    const asSubmitter = multisig.connect(owners[0]) as Multisig;
+    const asSubmitter = multisig.connect(approvers[0]) as Multisig;
     await (await asSubmitter.getFunction("submit")(target, data)).wait();
     for (let i = 0; i < threshold; i++) {
-      const asApprover = multisig.connect(owners[i]) as Multisig;
+      const asApprover = multisig.connect(approvers[i]) as Multisig;
       await (await asApprover.getFunction("approve")(txId)).wait();
     }
     await (await asSubmitter.getFunction("execute")(txId)).wait();
