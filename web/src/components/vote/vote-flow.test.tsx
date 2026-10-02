@@ -4,6 +4,7 @@ import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 
 import { VoteFlow } from './vote-flow';
 import { elections } from '@/test/fixtures';
+import { clearIdentityExport, createVotingIdentity, saveIdentityExport } from '@/lib/vote-identity';
 import { jsonResponse, renderWithI18n } from '@/test/render';
 
 const fetchMock = vi.fn();
@@ -19,6 +20,7 @@ describe('VoteFlow', () => {
   beforeEach(() => {
     fetchMock.mockReset();
     vi.stubGlobal('fetch', fetchMock);
+    for (const id of ['1', '2', '3', '9']) clearIdentityExport(id);
   });
 
   afterEach(() => {
@@ -45,6 +47,29 @@ describe('VoteFlow', () => {
     }
   });
 
+  it('offers the secret ballot when this device registered', async () => {
+    const created = createVotingIdentity();
+    saveIdentityExport('1', created.identityExport);
+    fetchMock.mockImplementation((url: unknown) => {
+      const target = String(url);
+      if (target.includes('/group')) {
+        return Promise.resolve(jsonResponse({ members: [created.commitment] }));
+      }
+      return Promise.resolve(jsonResponse(votingElection));
+    });
+
+    renderWithI18n(<VoteFlow electionId="1" />);
+
+    expect(await screen.findByRole('heading', { name: 'Choose your candidate' })).toBeInTheDocument();
+  });
+
+  it('tells fresh devices that registration is closed during voting', async () => {
+    fetchMock.mockResolvedValue(jsonResponse(votingElection));
+
+    renderWithI18n(<VoteFlow electionId="1" />);
+
+    expect(await screen.findByRole('heading', { name: 'Registration is closed' })).toBeInTheDocument();
+  });
   it('explains registration-phase elections and hides the ballot', async () => {
     fetchMock.mockResolvedValue(jsonResponse(registrationElection));
 
