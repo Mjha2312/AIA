@@ -1,28 +1,10 @@
 import { promises as fs } from "node:fs";
-import path from "node:path";
-import { Contract, JsonRpcProvider, Wallet, type InterfaceAbi } from "ethers";
+import { Contract, JsonRpcProvider, Wallet } from "ethers";
 import { logger } from "../logger.js";
+import { artifactPaths, fileExists, loadDeployment } from "./artifacts.js";
 
 export interface Registrar {
   registerVoter(electionId: string, identityCommitment: string): Promise<{ txHash: string }>;
-}
-
-function artifactPaths(): { abiPath: string; deploymentPath: string } {
-  const backendRoot = path.resolve(__dirname, "..", "..");
-  const repoRoot = path.resolve(backendRoot, "..");
-  return {
-    abiPath: path.join(repoRoot, "contracts", "abi", "ElectionManager.json"),
-    deploymentPath: path.join(repoRoot, "contracts", "deployments", "localhost.json"),
-  };
-}
-
-async function fileExists(p: string): Promise<boolean> {
-  try {
-    await fs.access(p);
-    return true;
-  } catch {
-    return false;
-  }
 }
 
 /** In-memory fake: lets the API and tests run without a chain. */
@@ -58,13 +40,12 @@ export class EthersRegistrar implements Registrar {
     registrarKey: string;
     chainId: number;
   }): Promise<EthersRegistrar> {
-    const { abiPath, deploymentPath } = artifactPaths();
-    const [abiRaw, deploymentRaw] = await Promise.all([
-      fs.readFile(abiPath, "utf8"),
-      fs.readFile(deploymentPath, "utf8"),
+    const { managerAbiPath } = artifactPaths();
+    const [abiRaw, deployment] = await Promise.all([
+      fs.readFile(managerAbiPath, "utf8"),
+      loadDeployment(),
     ]);
-    const abiJson = JSON.parse(abiRaw) as { abi: InterfaceAbi };
-    const deployment = JSON.parse(deploymentRaw) as { ElectionManager?: string; chainId?: number };
+    const abiJson = JSON.parse(abiRaw) as { abi: ConstructorParameters<typeof Contract>[1] };
     if (!deployment.ElectionManager) throw new Error("ElectionManager address missing in deployment file");
     const provider = new JsonRpcProvider(opts.rpcUrl, opts.chainId);
     const wallet = new Wallet(opts.registrarKey, provider);
@@ -99,8 +80,8 @@ export async function selectRegistrar(opts: {
     return EthersRegistrar.fromEnv(opts);
   }
   // auto: use live registrar when contract artifacts are present, else fake.
-  const { abiPath, deploymentPath } = artifactPaths();
-  if ((await fileExists(abiPath)) && (await fileExists(deploymentPath))) {
+  const { managerAbiPath, deploymentPath } = artifactPaths();
+  if ((await fileExists(managerAbiPath)) && (await fileExists(deploymentPath))) {
     try {
       const registrar = await EthersRegistrar.fromEnv(opts);
       logger.info("Using EthersRegistrar (contract artifacts found)");

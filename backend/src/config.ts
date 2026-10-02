@@ -9,6 +9,14 @@ const envSchema = z.object({
   RPC_URL: z.string().default("http://localhost:8545"),
   CHAIN_ID: z.coerce.number().int().positive().default(31337),
   REGISTRAR_PRIVATE_KEY: z.string().default("0x" + "0".repeat(64)),
+  RELAYER_PRIVATE_KEY: z.string().default("0x" + "0".repeat(64)),
+  WS_RPC_URL: z.string().default("ws://localhost:8545"),
+  RELAY_TX_TIMEOUT_MS: z.coerce.number().int().positive().default(60000),
+  INDEXER_ENABLED: z
+    .string()
+    .default("true")
+    .transform((v) => v.toLowerCase() === "true"),
+  INDEXER_FROM_BLOCK: z.coerce.number().int().nonnegative().default(0),
   SERVER_SECRET: z.string().min(1, "SERVER_SECRET is required"),
   JWT_SECRET: z.string().min(1, "JWT_SECRET is required"),
   MOCK_KYC: z
