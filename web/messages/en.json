@@ -66,7 +66,18 @@
   },
   "vote": {
     "title": "Cast your vote",
-    "stub": "The voting flow — KYC, identity key and Semaphore proof — lands in a later milestone."
+    "subtitle": "Check eligibility, register anonymously, and cast a secret ballot.",
+    "loading": "Loading election…",
+    "loadError": "We could not load this election. Check that the backend is running.",
+    "ballotTitle": "Your ballot",
+    "ballotHint": "These are the candidates on record. The voting steps continue below.",
+    "comingTitle": "Voting steps",
+    "comingBody": "Identity check, anonymous registration and the secret ballot land here next.",
+    "registrationTitle": "Registration is open",
+    "registrationBody": "This election is still registering voters. You will be able to cast your vote once the Voting phase opens.",
+    "closedTitle": "Voting is not open",
+    "closedBody": "This election is in the {phase} phase. Follow the count on the turnout page.",
+    "viewTurnout": "View turnout"
   },
   "receipt": {
     "title": "Your receipt",

@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 
-import { PageStub } from '@/components/layout/page-stub';
+import { VoteFlow } from '@/components/vote/vote-flow';
 
 export async function generateMetadata({
   params: { locale }
@@ -9,12 +9,11 @@ export async function generateMetadata({
   params: { locale: string };
 }): Promise<Metadata> {
   const t = await getTranslations({ locale, namespace: 'vote' });
-  return { title: t('title'), description: t('stub') };
+  return { title: t('title'), description: t('subtitle') };
 }
 
 export default async function VotePage({ params }: { params: { locale: string; electionId: string } }) {
   setRequestLocale(params.locale);
-  const t = await getTranslations({ locale: params.locale, namespace: 'vote' });
 
-  return <PageStub title={`${t('title')} · ${params.electionId}`} description={t('stub')} />;
+  return <VoteFlow electionId={params.electionId} />;
 }
