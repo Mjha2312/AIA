@@ -67,3 +67,31 @@ get a `next/font/google` family in `src/app/[locale]/layout.tsx` plus a variable
   (seven `@x402/*` plus `@react-native-async-storage/async-storage`) to an empty
   module; without it the webpack build fails even though only the injected
   connector is used.
+
+## Non-voter surfaces
+
+- **Turnout** (`/turnout/[electionId]`): live registered/voted counters (SPEC
+  `/ws` feed with a 5s turnout re-poll as fallback), a votes-over-time curve
+  and — from Tallying on, when the API publishes `tally` — a per-candidate bar
+  chart. Every chart ships a `<details>` data table and an `aria-label`
+  summary, so the numbers never depend on seeing pixels.
+- **Explorer** (`/explorer`): paginated public vote ledger with nullifier/vote
+  hash search, a browser-side tally recount compared against the official
+  tally (`MATCH`/`MISMATCH`), and the shadow-audit runs from
+  `GET /elections/:id/audits`. Tally logic lives in `src/lib/tally.ts` (pure,
+  unit-tested); `fetchAllVotes` in `src/lib/votes.ts` walks the cursor pages
+  with a safety cap.
+- **Admin** (`/admin`): ECI multi-sig panel. Connects an injected wallet or —
+  on a local chain only — Hardhat's public demo account through wagmi's `mock`
+  connector. Reads `threshold`/`txCount`/`transactions`/`approved`, decodes
+  each pending call into plain language (`src/lib/multisig.ts`, unit-tested),
+  and offers propose/approve/execute with a confirmation dialog for phase
+  changes. Submit/approve are owner-only on chain; execute is permissionless
+  once the threshold is met, and the UI gates the same way.
+- **Contract artifacts.** `npm run abi` (also a pre-step of dev/build/lint/
+  typecheck/test) copies `contracts/abi/*.json` and the localhost deployment
+  addresses into gitignored `src/abi/*.ts`. Nothing is ever imported across
+  packages.
+- **Timestamps.** The mock API uses epoch seconds while the real backend sends
+  ISO-8601 strings (and `{ found: false }` receipts omit the other keys); the
+  zod schemas accept both and normalise to one shape.

@@ -65,6 +65,20 @@
     @apply btn border-slate-300 bg-white text-navy-900 hover:border-navy-700 hover:bg-navy-50;
   }
 
+  /* Disabled actions must look inert — several admin buttons gate on-chain
+     permissions (owner, threshold) and must not invite a click. */
+  .btn:disabled {
+    @apply cursor-not-allowed opacity-50;
+  }
+
+  .btn-primary:disabled {
+    @apply hover:bg-navy-900;
+  }
+
+  .btn-secondary:disabled {
+    @apply hover:border-slate-300 hover:bg-white;
+  }
+
   .prose-civic {
     @apply text-base leading-relaxed text-ink-muted;
   }
