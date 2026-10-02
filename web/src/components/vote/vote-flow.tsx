@@ -1,27 +1,64 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { Link } from '@/i18n/navigation';
 import { api, ApiError } from '@/lib/api';
 import { Phase, isVotingOpen, phaseMessageKey } from '@/lib/phases';
 import { queryKeys } from '@/lib/query-keys';
+import { loadStoredCommitment } from '@/lib/vote-identity';
+import { BallotStep, type CastResult } from './ballot-step';
+import { IdentityStep, KycStep, RegisterStep, type RegisterResult } from './vote-steps';
 
 /**
- * Read-only ballot for one election, plus a phase guard.
+ * Voting page flow for one election, guarded by phase.
  *
- * - Voting phase: shows the candidate list (the interactive KYC → register →
- *   prove → relay steps arrive in follow-up PRs).
- * - Registration phase: explains that voting opens later.
+ * - Registration phase: KYC → anonymous identity → anonymous registration.
+ * - Voting phase: candidate ballot preview plus a resume/closed notice
+ *   (candidate selection and the secret ballot arrive in the next PR).
  * - Any other phase: points at the turnout page.
  */
 export function VoteFlow({ electionId }: { electionId: string }) {
   const t = useTranslations();
+  const queryClient = useQueryClient();
   const { data, isPending, isError, error, refetch } = useQuery({
     queryKey: queryKeys.election(electionId),
     queryFn: ({ signal }) => api.getElection(electionId, signal)
   });
+
+  // Wizard state lives here so each step can stay small. The kycToken is
+  // short-lived and in-memory only; the identity export stays on-device.
+  const [kycToken, setKycToken] = useState<string | null>(null);
+  const [commitment, setCommitment] = useState<string | null>(null);
+  const [registerResult, setRegisterResult] = useState<RegisterResult | null>(null);
+  const [castResult, setCastResult] = useState<CastResult | null>(null);
+
+  // Device identity (if this browser registered before). Read after mount so
+  // server rendering and the first client paint agree.
+  const [mounted, setMounted] = useState(false);
+  const [storedCommitment, setStoredCommitment] = useState<string | null>(null);
+  useEffect(() => {
+    setMounted(true);
+    setStoredCommitment(loadStoredCommitment(electionId));
+  }, [electionId]);
+
+  function handleRegisterDone(result: RegisterResult): void {
+    setRegisterResult(result);
+    setStoredCommitment(loadStoredCommitment(electionId));
+    void queryClient.invalidateQueries({ queryKey: queryKeys.election(electionId) });
+    void queryClient.invalidateQueries({ queryKey: queryKeys.turnout(electionId) });
+    void queryClient.invalidateQueries({ queryKey: queryKeys.group(electionId) });
+  }
+
+  function handleVoted(result: CastResult): void {
+    setCastResult(result);
+    void queryClient.invalidateQueries({ queryKey: queryKeys.election(electionId) });
+    void queryClient.invalidateQueries({ queryKey: queryKeys.turnout(electionId) });
+    void queryClient.invalidateQueries({ queryKey: queryKeys.votes(electionId) });
+    void queryClient.invalidateQueries({ queryKey: queryKeys.group(electionId) });
+  }
 
   if (isPending) {
     return (
@@ -71,8 +108,55 @@ export function VoteFlow({ electionId }: { electionId: string }) {
               </li>
             ))}
           </ol>
-          <h3 className="mt-6 text-base font-bold text-navy-900">{t('vote.comingTitle')}</h3>
-          <p className="prose-civic mt-1 text-sm">{t('vote.comingBody')}</p>
+        </section>
+      ) : null}
+
+      {mounted && isVotingOpen(election.phase) && storedCommitment && !castResult ? (
+        <section aria-labelledby="ballot-pick-section" className="card mt-6">
+          <BallotStep
+            electionId={election.id}
+            candidates={election.candidates}
+            onVoted={handleVoted}
+          />
+        </section>
+      ) : null}
+
+      {castResult ? (
+        <section aria-labelledby="voted-heading" className="card mt-6">
+          <h2 id="voted-heading" className="text-lg font-bold text-green-800">
+            {t('vote.voteDone')}
+          </h2>
+          <p className="prose-civic mt-2 text-sm">{t('vote.voteDoneBody')}</p>
+          <dl className="mt-4 space-y-3 text-sm">
+            <div>
+              <dt className="font-semibold text-navy-900">{t('vote.voteHashLabel')}</dt>
+              <dd className="mt-1 break-all font-mono">{castResult.voteHash}</dd>
+            </div>
+            <div>
+              <dt className="font-semibold text-navy-900">{t('vote.txHashLabel')}</dt>
+              <dd className="mt-1 break-all font-mono">{castResult.txHash}</dd>
+            </div>
+            <div>
+              <dt className="font-semibold text-navy-900">{t('vote.nullifierLabel')}</dt>
+              <dd className="mt-1 break-all font-mono">{castResult.nullifier}</dd>
+            </div>
+          </dl>
+          <p className="prose-civic mt-2 text-sm">{t('vote.nullifierHint')}</p>
+          <Link
+            href={`/receipt?nullifier=${encodeURIComponent(castResult.nullifier)}`}
+            className="btn-secondary mt-4 inline-block"
+          >
+            {t('vote.viewReceipt')}
+          </Link>
+        </section>
+      ) : null}
+
+      {mounted && isVotingOpen(election.phase) && !storedCommitment ? (
+        <section aria-labelledby="reg-closed-heading" className="card mt-6">
+          <h2 id="reg-closed-heading" className="text-lg font-bold text-navy-900">
+            {t('vote.regClosedTitle')}
+          </h2>
+          <p className="prose-civic mt-2 text-sm">{t('vote.regClosedBody')}</p>
         </section>
       ) : null}
 
@@ -82,6 +166,34 @@ export function VoteFlow({ electionId }: { electionId: string }) {
             {t('vote.registrationTitle')}
           </h2>
           <p className="prose-civic mt-2 text-sm">{t('vote.registrationBody')}</p>
+
+          <div className="mt-6 space-y-8">
+            <KycStep electionId={election.id} onVerified={setKycToken} />
+            {kycToken ? <IdentityStep electionId={election.id} onCreated={setCommitment} /> : null}
+            {kycToken && commitment && !registerResult ? (
+              <RegisterStep
+                electionId={election.id}
+                kycToken={kycToken}
+                commitment={commitment}
+                onDone={handleRegisterDone}
+              />
+            ) : null}
+            {registerResult ? (
+              <div aria-labelledby="registered-heading">
+                <h3 id="registered-heading" className="text-base font-bold text-navy-900">
+                  {t('vote.registerTxLabel')}
+                </h3>
+                {registerResult.txHash ? (
+                  <code className="mt-1 block break-all rounded-md bg-slate-100 px-3 py-2 text-sm">
+                    {registerResult.txHash}
+                  </code>
+                ) : null}
+                <p className="prose-civic mt-2 text-sm">
+                  {registerResult.alreadyRegistered ? t('vote.alreadyRegistered') : t('vote.registerDone')}
+                </p>
+              </div>
+            ) : null}
+          </div>
         </section>
       ) : null}
 
