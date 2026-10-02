@@ -1,9 +1,10 @@
-import express from "express";
+import express, { type NextFunction, type Request, type Response } from "express";
 import helmet from "helmet";
 import cors from "cors";
 import rateLimit from "express-rate-limit";
 import pinoHttp from "pino-http";
 import jwt from "jsonwebtoken";
+import swaggerUi from "swagger-ui-express";
 import { z } from "zod";
 import type { AppConfig } from "./config.js";
 import { createRelayLogger, logger } from "./logger.js";
@@ -17,6 +18,11 @@ import { VOTING_PHASE, type Relayer } from "./chain/relay.js";
 import { mapRelayChainError } from "./chain/errors.js";
 import { loadRelayDecodeInterface } from "./chain/artifacts.js";
 import type { Interface } from "ethers";
+import type { IndexerStore } from "./indexer/store.js";
+import { registerReadRoutes } from "./routes/reads.js";
+import { registerAuditRoutes } from "./routes/audit.js";
+import { mockKycPageHtml } from "./mockKyc.js";
+import { loadOpenApi } from "./docs.js";
 
 export interface AppDeps {
   config: AppConfig;
@@ -24,6 +30,7 @@ export interface AppDeps {
   registrar: Registrar;
   store: RegistrationStore;
   relayer: Relayer;
+  indexerStore: IndexerStore;
 }
 
 // Decoded once, reused for mapping on-chain reverts to API errors.
@@ -42,7 +49,7 @@ const kycClaimsSchema = z.object({
 export type KycClaims = z.infer<typeof kycClaimsSchema>;
 
 export function createApp(deps: AppDeps): express.Express {
-  const { config, kyc, registrar, store, relayer } = deps;
+  const { config, kyc, registrar, store, relayer, indexerStore } = deps;
   const app = express();
   // Privacy (SPEC): never log IPs, headers, or user agents on /relay/vote.
   // The relay route gets no pino-http access log at all, and its handler logs
@@ -70,10 +77,45 @@ export function createApp(deps: AppDeps): express.Express {
   app.use("/api/kyc", sensitiveLimiter);
   app.use("/api/register", sensitiveLimiter);
   app.use("/api/relay", sensitiveLimiter);
+  app.use("/api/elections", sensitiveLimiter);
+  app.use("/api/receipts", sensitiveLimiter);
 
   app.get("/api/health", (_req, res) => {
     res.json({ ok: true });
   });
+
+  // Swagger UI for backend/openapi.yaml. The YAML is parsed once on first
+  // request; failures surface as 500 via the error handler.
+  let docsHandler: express.RequestHandler | null = null;
+  app.use("/api/docs", swaggerUi.serve, async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      if (!docsHandler) {
+        const { doc } = await loadOpenApi();
+        docsHandler = swaggerUi.setup(doc as Record<string, unknown>);
+      }
+      docsHandler(req, res, next);
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  // Mock KYC page (prototype only): MOCK_KYC=false answers 404 so the
+  // DigiLocker stub remains the only path in non-mock environments.
+  app.get("/mock-kyc", (req, res) => {
+    if (!config.MOCK_KYC) {
+      sendError(res, 404, "NOT_FOUND", "Mock KYC is disabled (MOCK_KYC=false)");
+      return;
+    }
+    const sessionId = typeof req.query.sessionId === "string" ? req.query.sessionId : "";
+    if (!sessionId) {
+      sendError(res, 400, "INVALID_REQUEST", "query: sessionId is required");
+      return;
+    }
+    res.type("html").send(mockKycPageHtml({ sessionId, webAppUrl: config.WEB_APP_URL }));
+  });
+
+  registerReadRoutes(app, { indexerStore });
+  registerAuditRoutes(app, { indexerStore, adminApiKey: config.ADMIN_API_KEY });
 
   // The KycProvider interface returns only { subjectId } from complete(), so
   // the route layer binds sessionId -> electionId at start time. The election

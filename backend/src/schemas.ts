@@ -80,3 +80,23 @@ export const relayVoteSchema = z.object({
   candidateIndex: candidateIndexSchema,
   proof: semaphoreProofSchema,
 });
+
+// Cursor pagination for GET /elections/:id/votes: opaque base64url cursor,
+// limit clamped to 1..200 (default 50).
+export const votesQuerySchema = z.object({
+  cursor: z.string().min(1).optional(),
+  limit: z.coerce.number().int().min(1).max(200).default(50),
+});
+
+// Shadow-audit input: per-booth EVM counts. Length/shape checks against the
+// election's candidate list happen in the handler (needs the candidates).
+export const auditSchema = z.object({
+  booths: z
+    .array(
+      z.object({
+        boothId: z.string().min(1),
+        counts: z.array(z.number().int().nonnegative()).min(1),
+      }),
+    )
+    .min(1, "booths must list at least one booth"),
+});

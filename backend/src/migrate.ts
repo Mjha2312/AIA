@@ -1,7 +1,7 @@
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import type { Pool } from "pg";
-import { backendRoot } from "./paths.js";
+import { backendRootDir } from "./paths.js";
 
 /** Plain-SQL migration runner: applies backend/migrations/*.sql in order. */
 export async function runMigrations(pool: Pool, migrationsDir: string): Promise<string[]> {
@@ -40,5 +40,5 @@ export async function runMigrations(pool: Pool, migrationsDir: string): Promise<
 }
 
 export function defaultMigrationsDir(): string {
-  return path.join(backendRoot(), "migrations");
+  return path.join(backendRootDir(), "migrations");
 }

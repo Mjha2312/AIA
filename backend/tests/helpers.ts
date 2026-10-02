@@ -4,19 +4,25 @@ import type { AppConfig } from "../src/config.js";
 import { MockKycProvider } from "../src/kyc/mockProvider.js";
 import { FakeRegistrar } from "../src/chain/registrar.js";
 import { FakeRelayer } from "../src/chain/relay.js";
+import { InMemoryIndexerStore } from "../src/indexer/store.js";
 import { InMemoryRegistrationStore } from "../src/store.js";
 
 export const TEST_JWT_SECRET = "test-jwt-secret";
 export const TEST_SERVER_SECRET = "test-server-secret";
+export const TEST_ADMIN_KEY = "test-admin-key";
 
 export interface TestContext extends AppDeps {
   registrar: FakeRegistrar;
   store: InMemoryRegistrationStore;
   kyc: MockKycProvider;
   relayer: FakeRelayer;
+  indexerStore: InMemoryIndexerStore;
 }
 
-export function buildTestApp(): { app: ReturnType<typeof createApp>; ctx: TestContext } {
+export function buildTestApp(overrides: { adminApiKey?: string; mockKyc?: boolean } = {}): {
+  app: ReturnType<typeof createApp>;
+  ctx: TestContext;
+} {
   const config: AppConfig = {
     DATABASE_URL: "postgresql://localhost:5432/unused",
     PORT: 4000,
@@ -27,12 +33,14 @@ export function buildTestApp(): { app: ReturnType<typeof createApp>; ctx: TestCo
     RELAYER_PRIVATE_KEY: "0x" + "0".repeat(64),
     SERVER_SECRET: TEST_SERVER_SECRET,
     JWT_SECRET: TEST_JWT_SECRET,
-    MOCK_KYC: true,
+    MOCK_KYC: overrides.mockKyc ?? true,
     CHAIN_MODE: "fake",
     KYC_TOKEN_TTL_SECONDS: 600,
     RELAY_TX_TIMEOUT_MS: 5000,
     INDEXER_ENABLED: false,
     INDEXER_FROM_BLOCK: 0,
+    ADMIN_API_KEY: overrides.adminApiKey ?? TEST_ADMIN_KEY,
+    WEB_APP_URL: "http://localhost:3000",
   };
   const ctx: TestContext = {
     config,
@@ -40,6 +48,7 @@ export function buildTestApp(): { app: ReturnType<typeof createApp>; ctx: TestCo
     registrar: new FakeRegistrar(),
     store: new InMemoryRegistrationStore(),
     relayer: new FakeRelayer(),
+    indexerStore: new InMemoryIndexerStore(),
   };
   const app = createApp(ctx);
   return { app, ctx };
