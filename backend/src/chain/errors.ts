@@ -110,6 +110,31 @@ export function mapRelayChainError(err: unknown, iface: Interface): ChainErrorMa
   return { status: 502, code: "CHAIN_ERROR", message: "On-chain vote submission failed" };
 }
 
+/**
+ * Privacy-safe failure summary for relay logs. Carries the ethers error code,
+ * a short reason, and the 4-byte revert selector only — never revert
+ * arguments, transaction bodies, proofs, or nullifiers. All contract custom
+ * errors in this project are argument-free, so the selector alone identifies
+ * the failure (e.g. `0xe2586bcc` = WrongPhase) without leaking anything.
+ */
+export interface RelayFailureSummary {
+  code?: string;
+  reason?: string;
+  selector?: string;
+}
+
+export function relayFailureSummary(err: unknown): RelayFailureSummary {
+  if (!(err instanceof Error)) return {};
+  const summary: RelayFailureSummary = {};
+  const rec = err as unknown as Record<string, unknown>;
+  if (typeof rec.code === "string") summary.code = rec.code;
+  const reason = typeof rec.reason === "string" ? rec.reason : typeof rec.shortMessage === "string" ? rec.shortMessage : undefined;
+  if (reason) summary.reason = reason.slice(0, 160);
+  const data = extractRevertData(err);
+  if (data && /^0x[0-9a-fA-F]{8}[0-9a-fA-F]*$/.test(data)) summary.selector = data.slice(0, 10);
+  return summary;
+}
+
 /** True for errors that mean our locally-tracked nonce is stale. */
 export function isNonceError(err: unknown): boolean {
   if (!(err instanceof Error)) return false;

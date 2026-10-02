@@ -1,7 +1,7 @@
 import { AbiCoder, Contract, JsonRpcProvider, keccak256, Wallet } from "ethers";
 import { logger } from "../logger.js";
 import { artifactPaths, fileExists, loadDeployment, loadManagerInterface } from "./artifacts.js";
-import { TxTimeoutError, isNonceError } from "./errors.js";
+import { TxTimeoutError } from "./errors.js";
 
 export interface SemaphoreProofJson {
   merkleTreeDepth: string;
@@ -75,18 +75,25 @@ export class SerialQueue {
 
 /**
  * Tracks the relayer nonce locally so queued votes do not collide.
- * Resyncs from the network on first use and after nonce errors.
+ *
+ * Commit-after-broadcast: `current()` hands out the nonce without advancing;
+ * the caller must `commit()` once the node accepts the transaction, and
+ * `reset()` (lazy resync from the network) on any failure. Advancing before
+ * the broadcast poisoned every later send after a single pre-broadcast
+ * failure — the counter overshot the chain nonce permanently.
  */
 export class NonceManager {
   private next: number | null = null;
 
-  async take(provider: JsonRpcProvider, address: string): Promise<number> {
+  async current(provider: JsonRpcProvider, address: string): Promise<number> {
     if (this.next === null) {
       this.next = await provider.getTransactionCount(address, "pending");
     }
-    const nonce = this.next;
-    this.next += 1;
-    return nonce;
+    return this.next;
+  }
+
+  commit(): void {
+    if (this.next !== null) this.next += 1;
   }
 
   reset(): void {
@@ -157,7 +164,7 @@ export class EthersRelayer implements Relayer {
     proof: SemaphoreProofJson,
   ): Promise<{ txHash: string; voteHash: string }> {
     return this.queue.run(async () => {
-      const nonce = await this.nonces.take(this.provider, this.address);
+      const nonce = await this.nonces.current(this.provider, this.address);
       let txHash: string;
       try {
         const tx = (await this.contract.castVote(electionId, candidateIndex, { ...proof }, { nonce })) as {
@@ -165,9 +172,14 @@ export class EthersRelayer implements Relayer {
           wait: (confirms?: number) => Promise<unknown>;
         };
         txHash = tx.hash;
+        // Broadcast accepted: the nonce is consumed whether or not the
+        // receipt arrives in time.
+        this.nonces.commit();
         await this.waitMined(tx, txHash);
       } catch (err) {
-        if (isNonceError(err)) this.nonces.reset();
+        // Unknown outcome (pre-broadcast failure, timeout, transport blip):
+        // resync from the network instead of guessing.
+        this.nonces.reset();
         throw err;
       }
       return { txHash, voteHash: computeVoteHash(electionId, proof.nullifier, candidateIndex) };

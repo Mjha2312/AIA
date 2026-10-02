@@ -15,7 +15,7 @@ import { computeEligibilityHash } from "./privacy.js";
 import type { Registrar } from "./chain/registrar.js";
 import type { RegistrationStore } from "./store.js";
 import { VOTING_PHASE, type Relayer } from "./chain/relay.js";
-import { mapRelayChainError } from "./chain/errors.js";
+import { mapRelayChainError, relayFailureSummary } from "./chain/errors.js";
 import { loadRelayDecodeInterface } from "./chain/artifacts.js";
 import type { Interface } from "ethers";
 import type { IndexerStore } from "./indexer/store.js";
@@ -279,7 +279,10 @@ export function createApp(deps: AppDeps): express.Express {
     } catch (err) {
       const iface = await relayDecodeInterface();
       const mapped = mapRelayChainError(err, iface);
-      relayLogger.warn({ electionId, code: mapped.code }, "vote relay failed");
+      relayLogger.warn(
+        { electionId, code: mapped.code, failure: relayFailureSummary(err) },
+        "vote relay failed",
+      );
       sendError(res, mapped.status, mapped.code, mapped.message);
     }
   });
