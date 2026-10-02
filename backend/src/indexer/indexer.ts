@@ -14,9 +14,23 @@ export interface IndexerOptions {
   retryDelays?: number[];
   /** Optional enrichment for ElectionCreated (candidates are not in the event). */
   fetchElectionDetails?: (electionId: string) => Promise<ElectionDetailsInput | null>;
+  /**
+   * Watchdog interval (ms) that re-checks the checkpoint against the chain
+   * head. Default 10s; 0 disables. Heals the silent-stall case where the WS
+   * subscription stops delivering without ever reporting a drop.
+   */
+  pollIntervalMs?: number;
+  /**
+   * How stale (ms) the checkpoint may be behind head before the watchdog
+   * rebuilds the transport. Default 30s — well above normal live latency so
+   * a merely-slow block never triggers a reconnect storm.
+   */
+  staleAfterMs?: number;
 }
 
 const DEFAULT_RETRY_DELAYS = [1000, 2000, 5000, 10000, 30000];
+const DEFAULT_POLL_INTERVAL_MS = 10_000;
+const DEFAULT_STALE_AFTER_MS = 30_000;
 
 /**
  * Subscribes to ElectionManager events, persists them idempotently, and
@@ -24,6 +38,9 @@ const DEFAULT_RETRY_DELAYS = [1000, 2000, 5000, 10000, 30000];
  *
  * Lifecycle: backfill [lastCheckpoint+1 .. head] in chunks, then go live.
  * On socket drops, resubscribe with backoff after re-backfilling the gap.
+ * A watchdog additionally polls head-vs-checkpoint on an interval: if the
+ * live path silently misses blocks (no drop is ever reported — the exact
+ * stall seen on localhost), the transport is rebuilt and the gap backfilled.
  * Replays are safe: every write is idempotent on (txHash, logIndex).
  */
 export class Indexer {
@@ -32,6 +49,9 @@ export class Indexer {
   private unsubscribe: Unsubscriber | null = null;
   private retryTimer: NodeJS.Timeout | null = null;
   private retryAttempt = 0;
+  private pollTimer: NodeJS.Timeout | null = null;
+  private healing = false;
+  private lastLiveAt = 0;
 
   constructor(
     private readonly source: EventSource,
@@ -60,6 +80,7 @@ export class Indexer {
 
   async stop(): Promise<void> {
     this.stopped = true;
+    this.stopPolling();
     if (this.retryTimer) {
       clearTimeout(this.retryTimer);
       this.retryTimer = null;
@@ -95,6 +116,7 @@ export class Indexer {
     if (this.stopped) return;
     this.unsubscribe = await this.source.subscribe(
       (log) => {
+        this.lastLiveAt = Date.now();
         void this.processLog(log)
           .then(() => this.store.setLastProcessedBlock(log.blockNumber))
           .catch((err: unknown) => {
@@ -105,14 +127,83 @@ export class Indexer {
         void this.handleDrop();
       },
     );
+    // A fresh transport gets the full grace period to prove itself before
+    // the watchdog may judge it wedged.
+    this.lastLiveAt = Date.now();
+    this.startPolling();
   }
 
-  private async handleDrop(): Promise<void> {
-    if (this.stopped) return;
+  private startPolling(): void {
+    this.stopPolling();
+    const interval = this.opts.pollIntervalMs ?? DEFAULT_POLL_INTERVAL_MS;
+    if (this.stopped || interval <= 0) return;
+    const tick = async (): Promise<void> => {
+      this.pollTimer = null;
+      if (!this.stopped) await this.pollOnce();
+      if (!this.stopped) {
+        this.pollTimer = setTimeout(tick, interval);
+        this.pollTimer.unref?.();
+      }
+    };
+    this.pollTimer = setTimeout(tick, interval);
+    this.pollTimer.unref?.();
+  }
+
+  private stopPolling(): void {
+    if (this.pollTimer) {
+      clearTimeout(this.pollTimer);
+      this.pollTimer = null;
+    }
+  }
+
+  /**
+   * Watchdog tick: if the chain head has outrun the checkpoint for longer
+   * than the staleness grace, the live path is wedged — rebuild it.
+   * A merely-slow block (fresh gap) is left alone for live to deliver.
+   */
+  private async pollOnce(): Promise<void> {
+    if (this.healing) return;
+    let checkpoint: number | null;
+    let head: number;
+    try {
+      [checkpoint, head] = await Promise.all([
+        this.store.getLastProcessedBlock(),
+        this.source.getLatestBlock(),
+      ]);
+    } catch (err) {
+      logger.warn({ err }, "indexer watchdog could not read head/checkpoint");
+      return;
+    }
+    if (checkpoint === null || head <= checkpoint) return;
+    const staleAfter = this.opts.staleAfterMs ?? DEFAULT_STALE_AFTER_MS;
+    if (Date.now() - this.lastLiveAt < staleAfter) return;
+    this.healing = true;
+    try {
+      logger.warn(
+        { checkpoint, head, staleMs: Date.now() - this.lastLiveAt },
+        "indexer live path missed blocks; rebuilding transport and backfilling",
+      );
+      await this.heal();
+    } catch (err) {
+      logger.warn({ err }, "indexer watchdog heal failed; will retry on next tick");
+    } finally {
+      this.healing = false;
+    }
+  }
+
+  /** Tear down the transport, backfill the gap, and go live again. */
+  private async heal(): Promise<void> {
     if (this.unsubscribe) {
       this.unsubscribe();
       this.unsubscribe = null;
     }
+    await this.source.reconnect();
+    await this.backfillToHead();
+    if (!this.stopped) await this.subscribeLive();
+  }
+
+  private async handleDrop(): Promise<void> {
+    if (this.stopped) return;
     const delay = this.retryDelays[Math.min(this.retryAttempt, this.retryDelays.length - 1)];
     this.retryAttempt += 1;
     logger.warn({ delayMs: delay, attempt: this.retryAttempt }, "indexer connection dropped; reconnecting");
@@ -122,9 +213,9 @@ export class Indexer {
     this.retryTimer = null;
     if (this.stopped) return;
     try {
-      // Re-backfill the gap first (idempotent), then resume live.
-      await this.backfillToHead();
-      if (!this.stopped) await this.subscribeLive();
+      // Rebuild the transport (a dropped socket is never safe to reuse),
+      // re-backfill the gap (idempotent), then resume live.
+      await this.heal();
     } catch (err) {
       logger.warn({ err }, "indexer reconnect backfill failed; retrying");
       await this.handleDrop();

@@ -24,6 +24,13 @@ export interface EventSource {
   getPastLogs(fromBlock: number, toBlock: number): Promise<ChainLog[]>;
   getLatestBlock(): Promise<number>;
   subscribe(onLog: LogHandler, onDrop: DropHandler): Promise<Unsubscriber>;
+  /**
+   * Drop the underlying transport so the next use reconnects from scratch.
+   * The indexer's watchdog calls this when the live path silently misses
+   * blocks (ethers v6 never auto-reconnects a wedged socket, and close/error
+   * events are not guaranteed to fire).
+   */
+  reconnect(): Promise<void>;
   destroy(): Promise<void>;
 }
 
@@ -168,6 +175,15 @@ export class FakeEventSource implements EventSource {
       this.liveHandlers = this.liveHandlers.filter((h) => h !== onLog);
       this.dropHandlers = this.dropHandlers.filter((h) => h !== onDrop);
     };
+  }
+
+  /** Simulates a fresh socket: old listeners are gone, like after a reconnect. */
+  public reconnectCount = 0;
+
+  async reconnect(): Promise<void> {
+    this.reconnectCount += 1;
+    this.liveHandlers = [];
+    this.dropHandlers = [];
   }
 
   emitLive(log: ChainLog): void {

@@ -44,11 +44,13 @@ async function startIndexer(
   hub: { broadcast: (e: WsEvent) => void },
   iface: Interface,
   fromBlock = 0,
+  extraOpts: { pollIntervalMs?: number; staleAfterMs?: number } = {},
 ) {
   const indexer = new Indexer(source, store, iface, hub, {
     fromBlock,
     backfillChunkSize: 5,
     retryDelays: [1, 1, 1],
+    ...extraOpts,
   });
   await indexer.start();
   return indexer;
@@ -144,8 +146,7 @@ describe("Indexer", () => {
     }
   });
 
-  it("ignores logs it cannot decode", async () => {
-    const iface = await loadManagerInterface();
+  it("ignores logs it cannot decode", async () => {    const iface = await loadManagerInterface();
     const { source, store, events, hub } = setup();
     source.pastLogs = [
       {
@@ -168,5 +169,86 @@ describe("Indexer", () => {
     } finally {
       await indexer.stop();
     }
+  });
+
+  it("watchdog rebuilds the transport when live silently misses blocks", async () => {
+    const iface = await loadManagerInterface();
+    const { source, store, events, hub } = setup();
+    source.latestBlock = 60;
+
+    const indexer = await startIndexer(source, store, hub, iface, 60, {
+      pollIntervalMs: 5,
+      staleAfterMs: 10,
+    });
+    try {
+      // A block lands in history but the live socket never delivers it.
+      const voteHash = computeVoteHash("5", "31337", "2");
+      const gapLog = makeLog(iface, "VoteCast", [5n, 31337n, 2n, voteHash], { blockNumber: 61 });
+      source.pastLogs = [gapLog];
+      source.latestBlock = 61;
+      await new Promise((r) => setTimeout(r, 100));
+
+      expect(source.reconnectCount).toBeGreaterThanOrEqual(1);
+      expect(store.voteCount).toBe(1);
+      expect(await store.getLastProcessedBlock()).toBe(61);
+      expect(events.map((e) => e.type)).toEqual(["VoteCast"]);
+
+      // Live delivery works again on the rebuilt transport (no duplicates).
+      source.emitLive({ ...gapLog });
+      await new Promise((r) => setTimeout(r, 20));
+      expect(store.voteCount).toBe(1);
+      expect(events.filter((e) => e.type === "VoteCast")).toHaveLength(1);
+    } finally {
+      await indexer.stop();
+    }
+  });
+
+  it("watchdog leaves a fresh gap alone for live to deliver", async () => {
+    const iface = await loadManagerInterface();
+    const { source, store, events, hub } = setup();
+    source.latestBlock = 70;
+
+    const indexer = await startIndexer(source, store, hub, iface, 70, {
+      pollIntervalMs: 5,
+      staleAfterMs: 60_000,
+    });
+    try {
+      const voteHash = computeVoteHash("6", "4242", "0");
+      const freshLog = makeLog(iface, "VoteCast", [6n, 4242n, 0n, voteHash], { blockNumber: 71 });
+      source.pastLogs = [freshLog];
+      source.latestBlock = 71;
+      await new Promise((r) => setTimeout(r, 50));
+
+      // Within grace: no reconnect storm, no eager backfill.
+      expect(source.reconnectCount).toBe(0);
+      expect(store.voteCount).toBe(0);
+
+      source.emitLive({ ...freshLog });
+      await new Promise((r) => setTimeout(r, 20));
+      expect(store.voteCount).toBe(1);
+      expect(events.map((e) => e.type)).toEqual(["VoteCast"]);
+    } finally {
+      await indexer.stop();
+    }
+  });
+
+  it("stop() silences the watchdog", async () => {
+    const iface = await loadManagerInterface();
+    const { source, store, hub } = setup();
+    source.latestBlock = 80;
+
+    const indexer = await startIndexer(source, store, hub, iface, 80, {
+      pollIntervalMs: 5,
+      staleAfterMs: 10,
+    });
+    await indexer.stop();
+    const reconnects = source.reconnectCount;
+    const voteHash = computeVoteHash("7", "999", "1");
+    source.pastLogs = [makeLog(iface, "VoteCast", [7n, 999n, 1n, voteHash], { blockNumber: 81 })];
+    source.latestBlock = 81;
+    await new Promise((r) => setTimeout(r, 50));
+
+    expect(source.reconnectCount).toBe(reconnects);
+    expect(store.voteCount).toBe(0);
   });
 });
