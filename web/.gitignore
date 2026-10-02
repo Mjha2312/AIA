@@ -1,0 +1,6 @@
+# Editor / typecheck caches
+*.tsbuildinfo
+
+# Local scratch (screenshots live in docs/screenshots/ and are committed)
+tmp-*/
+dev.log

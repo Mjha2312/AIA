@@ -1,0 +1,99 @@
+{
+  "_review": {
+    "todoReview": "Source language. Every other locale was machine drafted and must be signed off by an official ECI translator before any pilot."
+  },
+  "meta": {
+    "title": "AIA Vote",
+    "description": "Aadhaar-gated, verifiable e-voting prototype built on a permissioned blockchain."
+  },
+  "skipToContent": "Skip to main content",
+  "common": {
+    "language": "Language",
+    "changeLanguage": "Change language",
+    "loading": "Loading…",
+    "retry": "Try again",
+    "backHome": "Back to home",
+    "phase": "Phase",
+    "turnout": "Turnout",
+    "registered": "Registered voters",
+    "voted": "Votes cast",
+    "candidates": "Candidates",
+    "electionId": "Election ID",
+    "notFound": "We could not find what you were looking for."
+  },
+  "nav": {
+    "primaryLabel": "Primary",
+    "home": "Home",
+    "receipt": "My receipt",
+    "explorer": "Explorer",
+    "admin": "Admin"
+  },
+  "phases": {
+    "setup": "Setup",
+    "registration": "Registration",
+    "voting": "Voting",
+    "tallying": "Tallying",
+    "finalized": "Finalized"
+  },
+  "home": {
+    "title": "Vote from anywhere without revealing who you are",
+    "subtitle": "Aadhaar proves you are eligible. A zero-knowledge proof keeps your vote secret. Both are written to a public ledger you can check yourself.",
+    "explainerTitle": "How verifiable voting works",
+    "explainerIntro": "Four steps, no jargon.",
+    "explainerFootnote": "You keep a receipt. The receipt lets you prove your own vote was counted — without revealing which candidate you chose to anyone else.",
+    "steps": {
+      "proofTitle": "Your identity stays private",
+      "proofBody": "Your vote travels as a zero-knowledge proof (Semaphore). The ledger never sees your name, your Aadhaar number or your address.",
+      "nullifierTitle": "Nobody can vote twice",
+      "nullifierBody": "Every vote carries a single-use nullifier, so one person can only ever cast one vote in an election.",
+      "chainTitle": "Your vote is on the record",
+      "chainBody": "The candidate you picked is recorded publicly. Your identity is not linkable to it.",
+      "auditTitle": "The count is checked",
+      "auditBody": "Electronic polling booth scans are compared against the ledger tally automatically, and any difference is published."
+    },
+    "electionsTitle": "Elections",
+    "electionsLoading": "Loading elections…",
+    "electionsError": "We could not load the election list. Check that the backend is running.",
+    "electionsEmpty": "No elections have been published yet.",
+    "viewDetails": "View details",
+    "castVote": "Cast your vote"
+  },
+  "electionCard": {
+    "constituency": "Constituency",
+    "candidateCount": "{count, plural, =0 {No candidates} one {# candidate} other {# candidates}}",
+    "turnoutValue": "{pct}% turnout",
+    "turnoutUnavailable": "Turnout not available yet"
+  },
+  "vote": {
+    "title": "Cast your vote",
+    "stub": "The voting flow — KYC, identity key and Semaphore proof — lands in a later milestone."
+  },
+  "receipt": {
+    "title": "Your receipt",
+    "stub": "Look up a receipt using the nullifier printed in your voting confirmation.",
+    "nullifierLabel": "Nullifier",
+    "placeholder": "Paste your nullifier",
+    "lookup": "Look up receipt"
+  },
+  "explorer": {
+    "title": "Public explorer",
+    "stub": "Browse elections, votes and nullifiers straight from the ledger."
+  },
+  "turnout": {
+    "title": "Turnout",
+    "stub": "Registered voters versus votes cast, updated as votes arrive.",
+    "live": "Live turnout",
+    "pollingNote": "Updates every few seconds."
+  },
+  "admin": {
+    "title": "Admin",
+    "stub": "Election management for Election Commission staff. Wallet connection is required here and nowhere else.",
+    "walletNotice": "Admin actions are signed with an ECI multi-sig wallet."
+  },
+  "footer": {
+    "prototypeNotice": "Prototype: Aadhaar e-KYC is simulated. No real voter data is used.",
+    "linksTitle": "Links",
+    "builtFor": "Built as a prototype for the Election Commission of India.",
+    "copyright": "© {year} AIA Vote. Demonstration only."
+  }
+}
