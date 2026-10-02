@@ -6,6 +6,16 @@ export type Unsubscriber = () => void;
 export type LogHandler = (log: ChainLog) => void;
 export type DropHandler = (err: Error) => void;
 
+/** Minimal ethers Log shape the indexer consumes (backfill + live). */
+interface EthersLogShape {
+  address: string;
+  transactionHash: string;
+  index: number;
+  blockNumber: number;
+  topics: string[];
+  data: string;
+}
+
 /**
  * Chain log source. The indexer backfills via getPastLogs, then goes live
  * via subscribe; drops are reported through onDrop so it can reconnect.
@@ -72,26 +82,34 @@ export class EthersEventSource implements EventSource {
   async subscribe(onLog: LogHandler, onDrop: DropHandler): Promise<Unsubscriber> {
     const { contract, provider } = await this.ensureConnected();
     const listener = (...args: unknown[]): void => {
-      const entry = args[args.length - 1] as {
-        address: string;
-        transactionHash: string;
-        index: number;
-        blockNumber: number;
-        topics: string[];
-        data: string;
-        getBlock?: () => Promise<{ timestamp: number } | null>;
-      };
+      // ethers v6 delivers "*" subscriptions as a single ContractEventPayload
+      // ({ filter, emitter, log, args, fragment }) — not a bare Log. The live
+      // log lives at .log; fall back to a bare log shape, then validate.
+      const payload = args[args.length - 1] as
+        | (EthersLogShape & { log?: EthersLogShape })
+        | undefined;
+      const entry = payload?.log ?? payload;
+      if (
+        !entry ||
+        !Array.isArray(entry.topics) ||
+        typeof entry.transactionHash !== "string" ||
+        typeof entry.blockNumber !== "number"
+      ) {
+        logger.warn("indexer live log has unexpected shape — skipping");
+        return;
+      }
+      const log: EthersLogShape = entry;
       void provider
-        .getBlock(entry.blockNumber)
+        .getBlock(log.blockNumber)
         .then((block) => {
           onLog({
-            address: entry.address,
-            transactionHash: entry.transactionHash,
-            logIndex: entry.index,
-            blockNumber: entry.blockNumber,
+            address: log.address,
+            transactionHash: log.transactionHash,
+            logIndex: log.index,
+            blockNumber: log.blockNumber,
             blockTimestamp: block ? new Date(block.timestamp * 1000) : null,
-            topics: [...entry.topics],
-            data: entry.data,
+            topics: [...log.topics],
+            data: log.data,
           });
         })
         .catch((err: unknown) => {
