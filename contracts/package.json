@@ -7,7 +7,7 @@
     "test": "hardhat test",
     "compile": "hardhat compile",
     "node": "hardhat node",
-    "lint": "tsc --noEmit",
+    "lint": "hardhat compile && tsc --noEmit",
     "build": "hardhat compile"
   },
   "keywords": [],
