@@ -2,15 +2,25 @@
 
 Solidity `ECIMultiSig` + `ElectionManager` (see `../docs/SPEC.md`), Hardhat + TypeScript.
 
-## Scripts
+## Run locally (exact commands)
 
 ```bash
+cd contracts
 npm install
-npm run node      # hardhat node on :8545 (leave running)
-npm run compile   # compile
-npm test          # smoke test
-npm run lint      # tsc --noEmit
+npm run lint          # hardhat compile + tsc --noEmit
+npm test              # 35 tests: multisig, election, e2e with real Semaphore proofs
+npm run coverage      # 100% lines/functions on both contracts
+
+# local chain + deploy (two terminals):
+npm run node          # terminal 1: hardhat node on :8545 (leave running)
+npm run deploy:local  # terminal 2: deploys stack, writes deployments/localhost.json
+npm run abi           # export ABIs to abi/ (committed for the backend)
 ```
+
+Deploy env (all optional on localhost): `MULTISIG_OWNERS` (comma-separated,
+default first 3 accounts), `MULTISIG_THRESHOLD` (default 2), `REGISTRAR_ADDRESS`
+or `REGISTRAR_PRIVATE_KEY` (default 4th account). Fresh `npm run node` +
+`npm run deploy:local` reproduces `deployments/localhost.json` deterministically.
 
 ## Trust model: who can do what
 
