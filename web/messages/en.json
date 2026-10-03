@@ -52,6 +52,7 @@
       "auditBody": "Electronic polling booth scans are compared against the ledger tally automatically, and any difference is published."
     },
     "electionsTitle": "Elections",
+    "exploreElections": "Explore Active Elections",
     "electionsLoading": "Loading elections…",
     "electionsError": "We could not load the election list. Check that the backend is running.",
     "electionsEmpty": "No elections have been published yet.",

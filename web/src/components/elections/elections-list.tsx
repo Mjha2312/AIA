@@ -19,7 +19,7 @@ export function ElectionsList() {
   });
 
   return (
-    <section aria-labelledby="elections-heading" className="mt-10">
+    <section aria-labelledby="elections-heading" id="elections" className="mt-10 scroll-mt-24">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h2 id="elections-heading" className="text-xl font-bold text-navy-900 sm:text-2xl">
           {t('home.electionsTitle')}
@@ -49,9 +49,9 @@ export function ElectionsList() {
       {data && data.length === 0 ? <p className="prose-civic mt-4">{t('home.electionsEmpty')}</p> : null}
 
       {data && data.length > 0 ? (
-        <ul className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <ul className="mt-4 grid grid-cols-1 items-stretch gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {data.map((election) => (
-            <li key={election.id}>
+            <li key={election.id} className="h-full">
               <ElectionCard election={election} />
             </li>
           ))}
