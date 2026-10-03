@@ -1,11 +1,12 @@
 'use client';
 
 import { useState, type FormEvent } from 'react';
-import { useFormatter, useTranslations } from 'next-intl';
+import { useTranslations } from 'next-intl';
 import { useQuery } from '@tanstack/react-query';
 
 import { api } from '@/lib/api';
 import { queryKeys } from '@/lib/query-keys';
+import { ReceiptCard } from './receipt-card';
 
 /**
  * Receipt lookup by nullifier. The nullifier is single-use and unlinkable:
@@ -13,7 +14,6 @@ import { queryKeys } from '@/lib/query-keys';
  */
 export function ReceiptLookup({ initialNullifier = '' }: { initialNullifier?: string }) {
   const t = useTranslations();
-  const format = useFormatter();
   const [input, setInput] = useState(initialNullifier);
   const [submitted, setSubmitted] = useState<string | null>(initialNullifier || null);
 
@@ -76,36 +76,8 @@ export function ReceiptLookup({ initialNullifier = '' }: { initialNullifier?: st
         </p>
       ) : null}
 
-      {receiptQuery.data?.found ? (
-        <dl className="card mt-4 space-y-3 text-sm">
-          <div>
-            <dt className="font-semibold text-navy-900">{t('receipt.voteHashLabel')}</dt>
-            <dd className="mt-1 break-all font-mono">{receiptQuery.data.voteHash}</dd>
-          </div>
-          <div>
-            <dt className="font-semibold text-navy-900">{t('receipt.txHashLabel')}</dt>
-            <dd className="mt-1 break-all font-mono">{receiptQuery.data.txHash}</dd>
-          </div>
-          {receiptQuery.data.blockNumber !== null ? (
-            <div>
-              <dt className="font-semibold text-navy-900">{t('receipt.blockLabel')}</dt>
-              <dd className="mt-1">{format.number(receiptQuery.data.blockNumber)}</dd>
-            </div>
-          ) : null}
-          {receiptQuery.data.timestamp !== null ? (
-            <div>
-              <dt className="font-semibold text-navy-900">{t('receipt.timeLabel')}</dt>
-              <dd className="mt-1">
-                {format.dateTime(new Date(receiptQuery.data.timestamp * 1000), {
-                  day: 'numeric',
-                  month: 'short',
-                  hour: '2-digit',
-                  minute: '2-digit'
-                })}
-              </dd>
-            </div>
-          ) : null}
-        </dl>
+      {receiptQuery.data?.found && submitted ? (
+        <ReceiptCard nullifier={submitted} receipt={receiptQuery.data} />
       ) : null}
     </div>
   );

@@ -82,4 +82,99 @@
   .prose-civic {
     @apply text-base leading-relaxed text-ink-muted;
   }
+
+  /* Monospace hash values: readable, wrapping, never overflowing on mobile. */
+  .hash-value {
+    @apply break-all font-mono text-[13px] leading-relaxed text-navy-900;
+    overflow-wrap: anywhere;
+    word-break: break-all;
+  }
+
+  /* Frosted sticky header: readable, not excessively transparent. */
+  .header-frosted {
+    @apply sticky top-0 z-40 border-b border-slate-200 bg-white/90 shadow-[0_1px_12px_rgba(12,19,56,0.08)];
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+}
+
+@layer utilities {
+  /* Subtle civic micro-animations. Short, non-infinite (except the live dot),
+     and globally disabled under prefers-reduced-motion above. */
+  @keyframes civic-pulse-soft {
+    0%,
+    100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+    50% {
+      transform: scale(1.06);
+      opacity: 0.92;
+    }
+  }
+
+  @keyframes civic-check-pop {
+    0% {
+      transform: scale(0.6);
+      opacity: 0;
+    }
+    100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+
+  @keyframes civic-live-ping {
+    0% {
+      transform: scale(1);
+      opacity: 0.7;
+    }
+    80%,
+    100% {
+      transform: scale(2.1);
+      opacity: 0;
+    }
+  }
+
+  @keyframes civic-draw-link {
+    0% {
+      stroke-dashoffset: 24;
+      opacity: 0.4;
+    }
+    100% {
+      stroke-dashoffset: 0;
+      opacity: 1;
+    }
+  }
+
+  .animate-civic-pulse-soft {
+    animation: civic-pulse-soft 2.4s ease-in-out 2;
+  }
+
+  .animate-civic-check {
+    animation: civic-check-pop 0.35s ease-out both;
+  }
+
+  .animate-civic-draw {
+    stroke-dasharray: 24;
+    animation: civic-draw-link 1.6s ease-out 1 both;
+  }
+
+  .live-dot {
+    @apply relative inline-flex h-2.5 w-2.5 rounded-full bg-green-500;
+  }
+
+  .live-dot::after {
+    content: '';
+    @apply absolute inset-0 rounded-full bg-green-500;
+    animation: civic-live-ping 1.8s cubic-bezier(0, 0, 0.2, 1) infinite;
+  }
+
+  .feature-card-icon {
+    transition: transform 0.2s ease-out;
+  }
+
+  .group\/feature:hover .feature-card-icon {
+    transform: scale(1.07);
+  }
 }

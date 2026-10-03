@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { Link } from '@/i18n/navigation';
+import { HashValue } from '@/components/ui/hash-value';
 import { api, ApiError } from '@/lib/api';
 import { Phase, isVotingOpen, phaseMessageKey } from '@/lib/phases';
 import { queryKeys } from '@/lib/query-keys';
@@ -122,32 +123,27 @@ export function VoteFlow({ electionId }: { electionId: string }) {
       ) : null}
 
       {castResult ? (
-        <section aria-labelledby="voted-heading" className="card mt-6">
-          <h2 id="voted-heading" className="text-lg font-bold text-green-800">
-            {t('vote.voteDone')}
-          </h2>
-          <p className="prose-civic mt-2 text-sm">{t('vote.voteDoneBody')}</p>
-          <dl className="mt-4 space-y-3 text-sm">
-            <div>
-              <dt className="font-semibold text-navy-900">{t('vote.voteHashLabel')}</dt>
-              <dd className="mt-1 break-all font-mono">{castResult.voteHash}</dd>
-            </div>
-            <div>
-              <dt className="font-semibold text-navy-900">{t('vote.txHashLabel')}</dt>
-              <dd className="mt-1 break-all font-mono">{castResult.txHash}</dd>
-            </div>
-            <div>
-              <dt className="font-semibold text-navy-900">{t('vote.nullifierLabel')}</dt>
-              <dd className="mt-1 break-all font-mono">{castResult.nullifier}</dd>
-            </div>
-          </dl>
-          <p className="prose-civic mt-2 text-sm">{t('vote.nullifierHint')}</p>
-          <Link
-            href={`/receipt?nullifier=${encodeURIComponent(castResult.nullifier)}`}
-            className="btn-secondary mt-4 inline-block"
-          >
-            {t('vote.viewReceipt')}
-          </Link>
+        <section aria-labelledby="voted-heading" className="mt-6 overflow-hidden rounded-xl border border-green-300 bg-white shadow-sm">
+          <div className="bg-green-600 px-5 py-3">
+            <h2 id="voted-heading" className="text-lg font-bold text-white">
+              ✓ {t('vote.voteDone')}
+            </h2>
+            <p className="mt-0.5 text-sm text-green-50">{t('vote.voteDoneBody')}</p>
+          </div>
+          <div className="space-y-4 p-5 text-sm">
+            <dl className="space-y-4">
+              <HashValue label={t('vote.voteHashLabel')} value={castResult.voteHash} />
+              <HashValue label={t('vote.txHashLabel')} value={castResult.txHash} />
+              <HashValue label={t('vote.nullifierLabel')} value={castResult.nullifier} />
+            </dl>
+            <p className="prose-civic mt-2 text-sm">{t('vote.nullifierHint')}</p>
+            <Link
+              href={`/receipt?nullifier=${encodeURIComponent(castResult.nullifier)}`}
+              className="btn-secondary mt-4 inline-block"
+            >
+              {t('vote.viewReceipt')}
+            </Link>
+          </div>
         </section>
       ) : null}
 

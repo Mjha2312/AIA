@@ -19,7 +19,11 @@
     "voted": "Votes cast",
     "candidates": "Candidates",
     "electionId": "Election ID",
-    "notFound": "We could not find what you were looking for."
+    "notFound": "We could not find what you were looking for.",
+    "close": "Close",
+    "copy": "Copy",
+    "copied": "Copied",
+    "download": "Download"
   },
   "nav": {
     "primaryLabel": "Primary",
@@ -49,7 +53,11 @@
       "chainTitle": "Your vote is on the record",
       "chainBody": "The candidate you picked is recorded publicly. Your identity is not linkable to it.",
       "auditTitle": "The count is checked",
-      "auditBody": "Electronic polling booth scans are compared against the ledger tally automatically, and any difference is published."
+      "auditBody": "Electronic polling booth scans are compared against the ledger tally automatically, and any difference is published.",
+      "proofUnder": "Semaphore creates an anonymous identity on your device. A zero-knowledge proof proves eligibility without revealing Aadhaar or name.",
+      "nullifierUnder": "A single-use nullifier is bound to this election (scope = electionId). It prevents double voting and is unlinkable to your identity commitment.",
+      "chainUnder": "The relayed Semaphore proof is verified on-chain. The ledger stores only the candidate index, proof and nullifier — never identity data.",
+      "auditUnder": "Anyone can recount public votes and compare booth EVM counts via the audit API. Differences are published as a shadow audit."
     },
     "electionsTitle": "Elections",
     "exploreElections": "Explore Active Elections",
@@ -57,13 +65,25 @@
     "electionsError": "We could not load the election list. Check that the backend is running.",
     "electionsEmpty": "No elections have been published yet.",
     "viewDetails": "View details",
-    "castVote": "Cast your vote"
+    "castVote": "Cast your vote",
+    "heroBadge": "Secure · Transparent · Verifiable",
+    "trustLine": "Built for public trust — every vote is checkable, no identity is exposed.",
+    "underHood": "Under the hood",
+    "underHoodHide": "Hide technical details",
+    "receiptTitle": "Keep your proof",
+    "receiptBody": "After voting you get a private receipt. Anyone can verify the count — nobody can link a vote back to you.",
+    "receiptCta": "How receipts work"
   },
   "electionCard": {
     "constituency": "Constituency",
     "candidateCount": "{count, plural, =0 {No candidates} one {# candidate} other {# candidates}}",
     "turnoutValue": "{pct}% turnout",
-    "turnoutUnavailable": "Turnout not available yet"
+    "turnoutUnavailable": "Turnout not available yet",
+    "live": "Live",
+    "winnerLabel": "Winner",
+    "distributionLabel": "Vote distribution",
+    "distributionSummary": "Vote share per candidate.",
+    "votesLabel": "{count, plural, one {# vote} other {# votes}}"
   },
   "vote": {
     "title": "Cast your vote",
@@ -113,7 +133,20 @@
     "alreadyRegistered": "Already registered for this election — you can vote once the Voting phase opens.",
     "regClosedTitle": "Registration is closed",
     "regClosedBody": "This election is already voting, so new registrations are no longer accepted. You needed to register during the Registration phase.",
-    "stepError": "Something went wrong. Please try again."
+    "stepError": "Something went wrong. Please try again.",
+    "txTitle": "Casting your vote",
+    "txSelected": "Vote selected",
+    "txSelectedDesc": "Your choice is locked in on this device only.",
+    "txProof": "Generating ZK proof",
+    "txProofDesc": "Creating a private proof that your vote is valid.",
+    "txLedger": "Writing to ledger",
+    "txLedgerDesc": "Submitting the verified vote to the blockchain.",
+    "txConfirmed": "Vote confirmed",
+    "txConfirmedDesc": "Your vote has been recorded and can be independently verified.",
+    "txClose": "Close",
+    "txRetry": "Try again",
+    "txErrorTitle": "Something went wrong",
+    "txCancelVote": "Back to ballot"
   },
   "receipt": {
     "title": "Your receipt",
@@ -126,7 +159,17 @@
     "voteHashLabel": "Vote hash",
     "txHashLabel": "Transaction",
     "blockLabel": "Block",
-    "timeLabel": "Time"
+    "timeLabel": "Time",
+    "copy": "Copy",
+    "copied": "Copied",
+    "download": "Download receipt",
+    "downloadHint": "Saves vote hash, transaction, nullifier and verification link. Never contains private keys.",
+    "qrLabel": "Verification QR",
+    "qrHint": "Scan to open this receipt for verification.",
+    "verifyUrlLabel": "Verification link",
+    "premiumSubtitle": "This is your proof that the vote was recorded and can be independently verified.",
+    "verifiedBadge": "Recorded on ledger",
+    "showNullifier": "Show nullifier"
   },
   "explorer": {
     "title": "Public explorer",

@@ -19,7 +19,11 @@
     "voted": "செலுத்தப்பட்ட வாக்குகள்",
     "candidates": "வேடிக்கையாளர்கள்",
     "electionId": "தேர்தல் எண்",
-    "notFound": "நீங்கள் தேடியது கிடைக்கவில்லை."
+    "notFound": "நீங்கள் தேடியது கிடைக்கவில்லை.",
+    "close": "Close",
+    "copy": "Copy",
+    "copied": "Copied",
+    "download": "Download"
   },
   "nav": {
     "primaryLabel": "முதன்மை",
@@ -49,7 +53,11 @@
       "chainTitle": "உங்கள் வாக்கு பதிவேட்டில் இருக்கும்",
       "chainBody": "நீங்கள் தேர்ந்தெடுத்த வேடிக்கையின் பெயர் பொதுவாகப் பதிவு செய்யப்படுகிறது. உங்கள் அடையாளத்தை அதனுடன் இணைக்க முடியாது.",
       "auditTitle": "எண்ணுதல் சரிபார்க்கப்படுகிறது",
-      "auditBody": "மின்னணு வாக்கெடுப்பு மையங்களின் ஸ்கேன்கள், பதிவேட்டின் எண்ணுதலுடன் தானாக ஒப்பிடப்படுகின்றன, மற்றும் ஏதேனும் வேறுபாடு வெளியிடப்படுகிறது."
+      "auditBody": "மின்னணு வாக்கெடுப்பு மையங்களின் ஸ்கேன்கள், பதிவேட்டின் எண்ணுதலுடன் தானாக ஒப்பிடப்படுகின்றன, மற்றும் ஏதேனும் வேறுபாடு வெளியிடப்படுகிறது.",
+      "proofUnder": "Semaphore creates an anonymous identity on your device. A zero-knowledge proof proves eligibility without revealing Aadhaar or name.",
+      "nullifierUnder": "A single-use nullifier is bound to this election (scope = electionId). It prevents double voting and is unlinkable to your identity commitment.",
+      "chainUnder": "The relayed Semaphore proof is verified on-chain. The ledger stores only the candidate index, proof and nullifier — never identity data.",
+      "auditUnder": "Anyone can recount public votes and compare booth EVM counts via the audit API. Differences are published as a shadow audit."
     },
     "electionsTitle": "தேர்தல்கள்",
     "exploreElections": "செயலில் உள்ள தேர்தல்களைப் பார்க்கவும்",
@@ -57,13 +65,25 @@
     "electionsError": "தேர்தல் பட்டியலை ஏற்ற முடியவில்லை. பின்புறம் இயங்குகிறதா என்பதைச் சரிபார்க்கவும்.",
     "electionsEmpty": "இதுவரை எந்தத் தேர்தலும் வெளியிடப்படவில்லை.",
     "viewDetails": "விவரங்களைப் பார்க்கவும்",
-    "castVote": "உங்கள் வாக்கைச் செலுத்தவும்"
+    "castVote": "உங்கள் வாக்கைச் செலுத்தவும்",
+    "heroBadge": "Secure · Transparent · Verifiable",
+    "trustLine": "Built for public trust — every vote is checkable, no identity is exposed.",
+    "underHood": "Under the hood",
+    "underHoodHide": "Hide technical details",
+    "receiptTitle": "Keep your proof",
+    "receiptBody": "After voting you get a private receipt. Anyone can verify the count — nobody can link a vote back to you.",
+    "receiptCta": "How receipts work"
   },
   "electionCard": {
     "constituency": "தொகுதி",
     "candidateCount": "{count, plural, =0 {வேடிக்கையாளர்கள் இல்லை} one {# வேடிக்கையாளர்} other {# வேடிக்கையாளர்கள்}}",
     "turnoutValue": "{pct}% வாக்கெடுப்பு",
-    "turnoutUnavailable": "வாக்கெடுப்பு வீதம் இன்னும் கிடைக்கவில்லை"
+    "turnoutUnavailable": "வாக்கெடுப்பு வீதம் இன்னும் கிடைக்கவில்லை",
+    "live": "Live",
+    "winnerLabel": "Winner",
+    "distributionLabel": "Vote distribution",
+    "distributionSummary": "Vote share per candidate.",
+    "votesLabel": "{count, plural, one {# vote} other {# votes}}"
   },
   "vote": {
     "title": "உங்கள் வாக்கைச் செலுத்துங்கள்",
@@ -113,7 +133,20 @@
     "alreadyRegistered": "இந்தத் தேர்தலுக்கு ஏற்கனவே பதிவு செய்யப்பட்டுள்ளது — வாக்களிப்பு கட்டம் தொடங்கியதும் வாக்களிக்கலாம்.",
     "regClosedTitle": "பதிவு மூடப்பட்டது",
     "regClosedBody": "இந்தத் தேர்தலில் வாக்களிப்பு நடக்கிறது, எனவே புதிய பதிவுகள் ஏற்கப்படாது. பதிவுக் கட்டத்தில் பதிவு செய்திருக்க வேண்டும்.",
-    "stepError": "ஏதோ தவறு நடந்தது. மீண்டும் முயலுங்கள்."
+    "stepError": "ஏதோ தவறு நடந்தது. மீண்டும் முயலுங்கள்.",
+    "txTitle": "Casting your vote",
+    "txSelected": "Vote selected",
+    "txSelectedDesc": "Your choice is locked in on this device only.",
+    "txProof": "Generating ZK proof",
+    "txProofDesc": "Creating a private proof that your vote is valid.",
+    "txLedger": "Writing to ledger",
+    "txLedgerDesc": "Submitting the verified vote to the blockchain.",
+    "txConfirmed": "Vote confirmed",
+    "txConfirmedDesc": "Your vote has been recorded and can be independently verified.",
+    "txClose": "Close",
+    "txRetry": "Try again",
+    "txErrorTitle": "Something went wrong",
+    "txCancelVote": "Back to ballot"
   },
   "receipt": {
     "title": "உங்கள் ரசீது",
@@ -126,7 +159,17 @@
     "voteHashLabel": "வாக்கு ஹாஷ்",
     "txHashLabel": "பரிவர்த்தனை",
     "blockLabel": "தொகுதி",
-    "timeLabel": "நேரம்"
+    "timeLabel": "நேரம்",
+    "copy": "Copy",
+    "copied": "Copied",
+    "download": "Download receipt",
+    "downloadHint": "Saves vote hash, transaction, nullifier and verification link. Never contains private keys.",
+    "qrLabel": "Verification QR",
+    "qrHint": "Scan to open this receipt for verification.",
+    "verifyUrlLabel": "Verification link",
+    "premiumSubtitle": "This is your proof that the vote was recorded and can be independently verified.",
+    "verifiedBadge": "Recorded on ledger",
+    "showNullifier": "Show nullifier"
   },
   "explorer": {
     "title": "பொதுவான எக்ஸ்ப்ளோரர்",

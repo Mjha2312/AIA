@@ -18,7 +18,7 @@ export function Header() {
   ] as const;
 
   return (
-    <header className="sticky top-0 z-30 border-b border-slate-200 bg-white">
+    <header className="header-frosted">
       <div className="bg-gradient-to-r from-saffron-500 via-white to-green-500" aria-hidden="true">
         <div className="mx-auto h-1 w-full max-w-6xl" />
       </div>

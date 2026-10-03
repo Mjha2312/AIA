@@ -19,7 +19,11 @@
     "voted": "দেওয়া ভোট",
     "candidates": "প্রার্থী",
     "electionId": "নির্বাচন আইডি",
-    "notFound": "আপনি যা খুঁজছিলেন তা পাওয়া যায়নি।"
+    "notFound": "আপনি যা খুঁজছিলেন তা পাওয়া যায়নি।",
+    "close": "Close",
+    "copy": "Copy",
+    "copied": "Copied",
+    "download": "Download"
   },
   "nav": {
     "primaryLabel": "প্রধান",
@@ -49,7 +53,11 @@
       "chainTitle": "আপনার ভোট রেকর্ডে থাকে",
       "chainBody": "আপনি যে প্রার্থী বেছে নিলেন তার নাম সর্বজনীনভাবে লেখা হয়; আপনার পরিচয় তার সঙ্গে মেলানো যায় না।",
       "auditTitle": "গণনা যাচাই করা হয়",
-      "auditBody": "ইলেকট্রনিক মতদান কেন্দ্রের স্ক্যান খাতার গণনার সঙ্গে স্বয়ংক্রিয়ভাবে তুলনা করা হয়, আর পার্থক্য প্রকাশ করা হয়।"
+      "auditBody": "ইলেকট্রনিক মতদান কেন্দ্রের স্ক্যান খাতার গণনার সঙ্গে স্বয়ংক্রিয়ভাবে তুলনা করা হয়, আর পার্থক্য প্রকাশ করা হয়।",
+      "proofUnder": "Semaphore creates an anonymous identity on your device. A zero-knowledge proof proves eligibility without revealing Aadhaar or name.",
+      "nullifierUnder": "A single-use nullifier is bound to this election (scope = electionId). It prevents double voting and is unlinkable to your identity commitment.",
+      "chainUnder": "The relayed Semaphore proof is verified on-chain. The ledger stores only the candidate index, proof and nullifier — never identity data.",
+      "auditUnder": "Anyone can recount public votes and compare booth EVM counts via the audit API. Differences are published as a shadow audit."
     },
     "electionsTitle": "নির্বাচন",
     "exploreElections": "সক্রিয় নির্বাচনগুলি দেখুন",
@@ -57,13 +65,25 @@
     "electionsError": "নির্বাচনের তালিকা লোড করা যায়নি। ব্যাকএন্ড চলছে কি না দেখুন।",
     "electionsEmpty": "এখনও কোনো নির্বাচন ঘোষণা করা হয়নি।",
     "viewDetails": "বিবরণ দেখুন",
-    "castVote": "আপনার ভোট দিন"
+    "castVote": "আপনার ভোট দিন",
+    "heroBadge": "Secure · Transparent · Verifiable",
+    "trustLine": "Built for public trust — every vote is checkable, no identity is exposed.",
+    "underHood": "Under the hood",
+    "underHoodHide": "Hide technical details",
+    "receiptTitle": "Keep your proof",
+    "receiptBody": "After voting you get a private receipt. Anyone can verify the count — nobody can link a vote back to you.",
+    "receiptCta": "How receipts work"
   },
   "electionCard": {
     "constituency": "নির্বাচনী কেন্দ্র",
     "candidateCount": "{count, plural, =0 {কোনো প্রার্থী নেই} one {# প্রার্থী} other {# প্রার্থী}}",
     "turnoutValue": "{pct}% ভোটদান",
-    "turnoutUnavailable": "ভোটদানের হার এখনও পাওয়া যায়নি"
+    "turnoutUnavailable": "ভোটদানের হার এখনও পাওয়া যায়নি",
+    "live": "Live",
+    "winnerLabel": "Winner",
+    "distributionLabel": "Vote distribution",
+    "distributionSummary": "Vote share per candidate.",
+    "votesLabel": "{count, plural, one {# vote} other {# votes}}"
   },
   "vote": {
     "title": "আপনার ভোট দিন",
@@ -113,7 +133,20 @@
     "alreadyRegistered": "এই নির্বাচনে আগেই নিবন্ধিত — ভোট পর্ব শুরু হলে ভোট দিতে পারবেন।",
     "regClosedTitle": "নিবন্ধন বন্ধ",
     "regClosedBody": "এই নির্বাচনে ভোট চলছে, তাই নতুন নিবন্ধন নেওয়া হচ্ছে না। নিবন্ধন পর্বে নিবন্ধন করা দরকার ছিল।",
-    "stepError": "কিছু ভুল হয়েছে। আবার চেষ্টা করুন।"
+    "stepError": "কিছু ভুল হয়েছে। আবার চেষ্টা করুন।",
+    "txTitle": "Casting your vote",
+    "txSelected": "Vote selected",
+    "txSelectedDesc": "Your choice is locked in on this device only.",
+    "txProof": "Generating ZK proof",
+    "txProofDesc": "Creating a private proof that your vote is valid.",
+    "txLedger": "Writing to ledger",
+    "txLedgerDesc": "Submitting the verified vote to the blockchain.",
+    "txConfirmed": "Vote confirmed",
+    "txConfirmedDesc": "Your vote has been recorded and can be independently verified.",
+    "txClose": "Close",
+    "txRetry": "Try again",
+    "txErrorTitle": "Something went wrong",
+    "txCancelVote": "Back to ballot"
   },
   "receipt": {
     "title": "আপনার রসিদ",
@@ -126,7 +159,17 @@
     "voteHashLabel": "ভোট হ্যাশ",
     "txHashLabel": "লেনদেন",
     "blockLabel": "ব্লক",
-    "timeLabel": "সময়"
+    "timeLabel": "সময়",
+    "copy": "Copy",
+    "copied": "Copied",
+    "download": "Download receipt",
+    "downloadHint": "Saves vote hash, transaction, nullifier and verification link. Never contains private keys.",
+    "qrLabel": "Verification QR",
+    "qrHint": "Scan to open this receipt for verification.",
+    "verifyUrlLabel": "Verification link",
+    "premiumSubtitle": "This is your proof that the vote was recorded and can be independently verified.",
+    "verifiedBadge": "Recorded on ledger",
+    "showNullifier": "Show nullifier"
   },
   "explorer": {
     "title": "সর্বজনীন এক্সপ্লোরার",

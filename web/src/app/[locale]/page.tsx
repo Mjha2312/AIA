@@ -1,7 +1,7 @@
 import { setRequestLocale } from 'next-intl/server';
 
 import { ElectionsList } from '@/components/elections/elections-list';
-import { Hero, HowItWorks } from '@/components/home/sections';
+import { Hero, HowItWorks, ReceiptCallout } from '@/components/home/sections';
 
 export default function HomePage({ params: { locale } }: { params: { locale: string } }) {
   setRequestLocale(locale);
@@ -11,6 +11,7 @@ export default function HomePage({ params: { locale } }: { params: { locale: str
       <Hero />
       <ElectionsList />
       <HowItWorks />
+      <ReceiptCallout />
     </>
   );
 }
