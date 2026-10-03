@@ -67,6 +67,12 @@
     @apply inline-block h-px w-6 bg-gold-500;
   }
 
+  /* Official emblem artwork is black line-art: this filter renders it in a
+     restrained gold so it stands out on the navy hero. */
+  .emblem-gold {
+    filter: invert(74%) sepia(58%) saturate(850%) hue-rotate(-12deg) brightness(1.04);
+  }
+
   /* Consistent page header for vote / receipt / explorer / turnout / admin. */
   .page-hero {
     @apply overflow-hidden rounded-2xl border border-cream-border bg-white p-5 shadow-[0_1px_4px_rgba(16,42,86,0.06)] sm:p-6;

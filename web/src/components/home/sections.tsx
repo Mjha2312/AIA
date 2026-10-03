@@ -1,42 +1,26 @@
+import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 
 import { Link } from '@/i18n/navigation';
 import { UnderHood } from '@/components/ui/under-hood';
 
+const EMBLEM_SRC = 'https://upload.wikimedia.org/wikipedia/commons/5/55/Emblem_of_India.svg';
+
 /**
- * Stylized golden emblem motif for the hero: a pillar capital crowned by a
- * 24-spoke chakra medallion. Decorative only (aria-hidden) — a restrained
- * civic motif, not a reproduction of the official state emblem.
+ * Official National Emblem of India artwork, served from its canonical
+ * source and tinted gold via CSS so it stands out on the navy hero.
  */
-function EmblemMotif() {
+function NationalEmblem({ alt }: { alt: string }) {
   return (
-    <svg
-      viewBox="0 0 200 240"
-      aria-hidden="true"
-      className="h-44 w-auto sm:h-56 lg:h-64"
-    >
-      <g fill="none" stroke="#C99A2B" strokeWidth="4">
-        <circle cx="100" cy="78" r="52" />
-        <circle cx="100" cy="78" r="8" fill="#C99A2B" stroke="none" />
-        {Array.from({ length: 24 }, (_, i) => {
-          const angle = (i * Math.PI) / 12;
-          return (
-            <line
-              key={i}
-              x1={100 + 11 * Math.cos(angle)}
-              y1={78 + 11 * Math.sin(angle)}
-              x2={100 + 48 * Math.cos(angle)}
-              y2={78 + 48 * Math.sin(angle)}
-              strokeWidth="2.5"
-            />
-          );
-        })}
-        <path d="M64 146h72l-8 18H72l-8-18Z" strokeWidth="3.5" />
-        <path d="M72 164h56" strokeWidth="3.5" />
-        <path d="M78 176h44l-6 32H84l-6-32Z" strokeWidth="3.5" />
-        <path d="M66 216h68" strokeWidth="4" strokeLinecap="round" />
-      </g>
-    </svg>
+    <Image
+      src={EMBLEM_SRC}
+      alt={alt}
+      width={220}
+      height={280}
+      unoptimized
+      priority={false}
+      className="emblem-gold h-44 w-auto object-contain sm:h-56 lg:h-64"
+    />
   );
 }
 
@@ -80,7 +64,7 @@ export function Hero() {
           </p>
         </div>
         <div className="flex flex-col items-center gap-3 justify-self-center lg:justify-self-end lg:pr-6">
-          <EmblemMotif />
+          <NationalEmblem alt={t('emblemAlt')} />
           <p className="text-lg font-bold tracking-wide text-gold-100">{t('motto')}</p>
         </div>
       </div>

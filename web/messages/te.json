@@ -76,7 +76,8 @@
     "receiptTitle": "Keep your proof",
     "receiptBody": "After voting you get a private receipt. Anyone can verify the count — nobody can link a vote back to you.",
     "receiptCta": "How receipts work",
-    "motto": "सत्यमेव जयते"
+    "motto": "सत्यमेव जयते",
+    "emblemAlt": "National Emblem of India"
   },
   "electionCard": {
     "constituency": "నియోజకవర్గం",
