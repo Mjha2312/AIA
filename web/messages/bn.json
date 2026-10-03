@@ -30,7 +30,10 @@
     "home": "হোম",
     "receipt": "আমার রসিদ",
     "explorer": "এক্সপ্লোরার",
-    "admin": "প্রশাসন"
+    "admin": "প্রশাসন",
+    "faqs": "FAQs",
+    "about": "About",
+    "help": "Help"
   },
   "phases": {
     "setup": "প্রস্তুতি",
@@ -72,7 +75,8 @@
     "underHoodHide": "Hide technical details",
     "receiptTitle": "Keep your proof",
     "receiptBody": "After voting you get a private receipt. Anyone can verify the count — nobody can link a vote back to you.",
-    "receiptCta": "How receipts work"
+    "receiptCta": "How receipts work",
+    "motto": "सत्यमेव जयते"
   },
   "electionCard": {
     "constituency": "নির্বাচনী কেন্দ্র",
@@ -285,5 +289,15 @@
     "linksTitle": "লিঙ্ক",
     "builtFor": "ভারতের নির্বাচন কমিশনের জন্য তৈরি একটি প্রোটোটাইপ।",
     "copyright": "© {year} AIA Vote. কেবল প্রদর্শনের জন্য।"
+  },
+  "brand": {
+    "title": "भारत चुनाव पोर्टल",
+    "subtitle": "AADHAAR E-VOTING PORTAL"
+  },
+  "trust": {
+    "label": "Trust indicators",
+    "secure": "Secure",
+    "transparent": "Transparent",
+    "verifiable": "Verifiable"
   }
 }

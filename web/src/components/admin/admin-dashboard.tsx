@@ -224,8 +224,10 @@ export function AdminDashboard() {
   if (!isConnected) {
     return (
       <div>
-        <h1 className="text-2xl font-bold text-navy-900 sm:text-3xl">{t('admin.title')}</h1>
-        <p className="prose-civic mt-2 max-w-prose">{t('admin.connectBody')}</p>
+        <div className="page-hero">
+          <h1>{t('admin.title')}</h1>
+          <p className="prose-civic mt-2 max-w-prose">{t('admin.connectBody')}</p>
+        </div>
         <div className="card mt-4 max-w-md">
           <h2 className="text-lg font-bold text-navy-900">{t('admin.connectTitle')}</h2>
           <div className="mt-3 flex flex-col gap-2">
@@ -263,8 +265,10 @@ export function AdminDashboard() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-navy-900 sm:text-3xl">{t('admin.title')}</h1>
-      <div className="mt-2 flex flex-wrap items-center gap-2">
+      <div className="page-hero">
+        <h1>{t('admin.title')}</h1>
+      </div>
+      <div className="mt-4 flex flex-wrap items-center gap-2">
         <p className="prose-civic">{t('admin.connectedAs', { address: shortAddress(address ?? '') })}</p>
         {isOwner && (
           <span className="rounded-full bg-green-100 px-2 py-0.5 text-sm font-bold text-green-800">

@@ -30,7 +30,10 @@
     "home": "హోమ్",
     "receipt": "నా రసీదు",
     "explorer": "ఎక్స్‌ప్లోరర్",
-    "admin": "నిర్వహణ"
+    "admin": "నిర్వహణ",
+    "faqs": "FAQs",
+    "about": "About",
+    "help": "Help"
   },
   "phases": {
     "setup": "సిద్ధం",
@@ -72,7 +75,8 @@
     "underHoodHide": "Hide technical details",
     "receiptTitle": "Keep your proof",
     "receiptBody": "After voting you get a private receipt. Anyone can verify the count — nobody can link a vote back to you.",
-    "receiptCta": "How receipts work"
+    "receiptCta": "How receipts work",
+    "motto": "सत्यमेव जयते"
   },
   "electionCard": {
     "constituency": "నియోజకవర్గం",
@@ -285,5 +289,15 @@
     "linksTitle": "లింకులు",
     "builtFor": "భారత ఎన్నికల సంఘం కోసం రూపొందించిన ప్రొటోటైప్.",
     "copyright": "© {year} AIA Vote. ప్రదర్శన కోసం మాత్రమే."
+  },
+  "brand": {
+    "title": "भारत चुनाव पोर्टल",
+    "subtitle": "AADHAAR E-VOTING PORTAL"
+  },
+  "trust": {
+    "label": "Trust indicators",
+    "secure": "Secure",
+    "transparent": "Transparent",
+    "verifiable": "Verifiable"
   }
 }

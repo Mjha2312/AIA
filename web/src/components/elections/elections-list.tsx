@@ -19,8 +19,9 @@ export function ElectionsList() {
   });
 
   return (
-    <section aria-labelledby="elections-heading" id="elections" className="mt-10 scroll-mt-24">
-      <div className="flex flex-wrap items-baseline justify-between gap-2">
+    <section aria-labelledby="elections-heading" id="elections" className="mt-12 scroll-mt-28">
+      <p className="eyebrow">{t('home.electionsTitle')}</p>
+      <div className="mt-2 flex flex-wrap items-baseline justify-between gap-2">
         <h2 id="elections-heading" className="text-xl font-bold text-navy-900 sm:text-2xl">
           {t('home.electionsTitle')}
         </h2>

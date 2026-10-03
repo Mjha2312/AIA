@@ -49,6 +49,22 @@ const config: Config = {
         ink: {
           DEFAULT: '#111827',
           muted: '#4B5563'
+        },
+        cream: {
+          DEFAULT: '#FDFBF6',
+          dark: '#F6F1E6',
+          border: '#E9E1D1'
+        },
+        paleblue: {
+          DEFAULT: '#EAF1FB',
+          border: '#C9D8F0'
+        },
+        gold: {
+          50: '#FBF6E7',
+          100: '#F5EAC6',
+          500: '#C99A2B',
+          600: '#9A7611',
+          700: '#7A5D0D'
         }
       },
       fontFamily: {

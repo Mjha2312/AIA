@@ -2,28 +2,35 @@ import { useTranslations } from 'next-intl';
 
 import { Link } from '@/i18n/navigation';
 
+/**
+ * Civic government-style footer: navy band, prototype notice, existing
+ * functional links. Carries the `#about` anchor for the header About link.
+ */
 export function Footer() {
   const t = useTranslations();
   const year = new Date().getFullYear();
 
   return (
-    <footer className="mt-12 border-t border-slate-200 bg-slate-50">
-      <div className="mx-auto w-full max-w-6xl space-y-6 px-4 py-8">
+    <footer id="about" className="mt-14 scroll-mt-28 bg-navy-800 text-slate-200">
+      <div className="mx-auto w-full max-w-6xl space-y-6 px-4 py-10">
         <p
           role="note"
-          className="rounded-md border border-saffron-200 bg-saffron-50 px-4 py-3 text-base font-medium text-saffron-800"
+          className="rounded-md border border-gold-500/50 bg-white/5 px-4 py-3 text-[15px] font-medium leading-relaxed text-gold-100"
         >
           {t('footer.prototypeNotice')}
         </p>
 
         <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <p className="text-base font-bold text-navy-900">AIA Vote</p>
-            <p className="prose-civic mt-1 max-w-prose">{t('footer.builtFor')}</p>
+          <div className="min-w-0">
+            <p className="text-base font-bold text-white">{t('brand.title')}</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-300">
+              {t('brand.subtitle')}
+            </p>
+            <p className="mt-2 max-w-prose text-[15px] leading-relaxed text-slate-300">{t('footer.builtFor')}</p>
           </div>
 
           <nav aria-labelledby="footer-links" className="shrink-0">
-            <h2 id="footer-links" className="text-base font-semibold text-navy-900">
+            <h2 id="footer-links" className="text-sm font-bold uppercase tracking-wide text-gold-100">
               {t('footer.linksTitle')}
             </h2>
             <ul className="mt-2 space-y-1">
@@ -34,7 +41,7 @@ export function Footer() {
                 { href: '/admin', label: t('nav.admin') }
               ].map((link) => (
                 <li key={link.href}>
-                  <Link href={link.href} className="inline-flex min-h-touch items-center text-base text-navy-700 underline hover:text-navy-900">
+                  <Link href={link.href} className="inline-flex min-h-touch items-center text-[15px] text-slate-200 underline decoration-slate-400 underline-offset-2 hover:text-white">
                     {link.label}
                   </Link>
                 </li>
@@ -43,7 +50,7 @@ export function Footer() {
           </nav>
         </div>
 
-        <p className="text-sm text-ink-muted">{t('footer.copyright', { year })}</p>
+        <p className="border-t border-white/10 pt-4 text-sm text-slate-300">{t('footer.copyright', { year })}</p>
       </div>
     </footer>
   );

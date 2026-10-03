@@ -30,7 +30,20 @@
     "home": "Home",
     "receipt": "My receipt",
     "explorer": "Explorer",
-    "admin": "Admin"
+    "admin": "Admin",
+    "faqs": "FAQs",
+    "about": "About",
+    "help": "Help"
+  },
+  "brand": {
+    "title": "भारत चुनाव पोर्टल",
+    "subtitle": "AADHAAR E-VOTING PORTAL"
+  },
+  "trust": {
+    "label": "Trust indicators",
+    "secure": "Secure",
+    "transparent": "Transparent",
+    "verifiable": "Verifiable"
   },
   "phases": {
     "setup": "Setup",
@@ -67,6 +80,7 @@
     "viewDetails": "View details",
     "castVote": "Cast your vote",
     "heroBadge": "Secure · Transparent · Verifiable",
+    "motto": "सत्यमेव जयते",
     "trustLine": "Built for public trust — every vote is checkable, no identity is exposed.",
     "underHood": "Under the hood",
     "underHoodHide": "Hide technical details",

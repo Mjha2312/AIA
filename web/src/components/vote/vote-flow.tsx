@@ -89,9 +89,11 @@ export function VoteFlow({ electionId }: { electionId: string }) {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-navy-900 sm:text-3xl">
-        {t('vote.title')} · {election.constituencyId}
-      </h1>
+      <div className="page-hero">
+        <h1>
+          {t('vote.title')} · {election.constituencyId}
+        </h1>
+      </div>
 
       {isVotingOpen(election.phase) ? (
         <section aria-labelledby="ballot-heading" className="card mt-6">

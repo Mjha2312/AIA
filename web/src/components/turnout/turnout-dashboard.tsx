@@ -92,9 +92,11 @@ export function TurnoutDashboard({ electionId }: { electionId: string }) {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-navy-900 sm:text-3xl">
-        {t('turnout.live')} · {election.constituencyId}
-      </h1>
+      <div className="page-hero">
+        <h1>
+          {t('turnout.live')} · {election.constituencyId}
+        </h1>
+      </div>
 
       <LiveTurnout electionId={electionId} pollIntervalMs={LIVE_REFETCH_MS} />
       <p className="prose-civic mt-2 text-sm">{t('turnout.pollingNote')}</p>

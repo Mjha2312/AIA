@@ -31,8 +31,10 @@ export function ExplorerDashboard() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-navy-900 sm:text-3xl">{t('explorer.title')}</h1>
-      <p className="prose-civic mt-2 max-w-prose">{t('explorer.stub')}</p>
+      <div className="page-hero">
+        <h1>{t('explorer.title')}</h1>
+        <p className="prose-civic mt-2 max-w-prose">{t('explorer.stub')}</p>
+      </div>
 
       {electionsQuery.isPending && <p className="prose-civic mt-4">{t('common.loading')}</p>}
       {electionsQuery.isError && (

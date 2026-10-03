@@ -93,9 +93,9 @@ export function ElectionCard({ election }: { election: Election }) {
     isFinalized && election.tally != null && election.tally.length === election.candidates.length;
 
   const cardTone = isFinalized
-    ? 'border-slate-200 bg-slate-50'
+    ? 'border-cream-border bg-[#F7F5F0]'
     : isRegistration
-      ? 'border-saffron-200 bg-[#FFFEFB]'
+      ? 'border-gold-100 bg-[#FFFEFB]'
       : 'border-green-300 bg-white shadow-[0_2px_16px_rgba(19,136,8,0.08)]';
 
   return (

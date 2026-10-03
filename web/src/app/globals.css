@@ -14,7 +14,11 @@
   }
 
   body {
-    @apply bg-white text-ink;
+    @apply bg-cream text-ink;
+    /* Warm government-document canvas with an extremely subtle chakra tile.
+       Static (no motion), baked low-alpha stroke — never harms readability. */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='280' height='280' viewBox='0 0 280 280'%3E%3Cg fill='none' stroke='%23162F5F' stroke-opacity='0.055' stroke-width='1'%3E%3Ccircle cx='140' cy='140' r='58'/%3E%3Ccircle cx='140' cy='140' r='7'/%3E%3Cpath d='M140 82v116M82 140h116M99 99l82 82M181 99l-82 82'/%3E%3C/g%3E%3C/svg%3E");
+    background-size: 280px 280px;
   }
 
   /* WCAG AA: a visible, high-contrast focus ring everywhere, including phones. */
@@ -50,7 +54,27 @@
   }
 
   .card {
-    @apply rounded-lg border border-slate-200 bg-white p-4 shadow-sm sm:p-5;
+    @apply rounded-xl border border-cream-border bg-white p-4 shadow-[0_1px_4px_rgba(16,42,86,0.06)] sm:p-5;
+  }
+
+  /* Civic section eyebrow: small gold-capped label above section headings. */
+  .eyebrow {
+    @apply inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.14em] text-gold-700;
+  }
+
+  .eyebrow::before {
+    content: '';
+    @apply inline-block h-px w-6 bg-gold-500;
+  }
+
+  /* Consistent page header for vote / receipt / explorer / turnout / admin. */
+  .page-hero {
+    @apply overflow-hidden rounded-2xl border border-cream-border bg-white p-5 shadow-[0_1px_4px_rgba(16,42,86,0.06)] sm:p-6;
+    border-top: 4px solid theme('colors.navy.900');
+  }
+
+  .page-hero h1 {
+    @apply text-2xl font-bold text-navy-900 sm:text-3xl;
   }
 
   .btn {
@@ -92,10 +116,11 @@
 
   /* Frosted sticky header: readable, not excessively transparent. */
   .header-frosted {
-    @apply sticky top-0 z-40 border-b border-slate-200 bg-white/90 shadow-[0_1px_12px_rgba(12,19,56,0.08)];
+    @apply sticky top-0 z-40 border-b border-paleblue-border bg-paleblue/95 shadow-[0_1px_12px_rgba(12,19,56,0.08)];
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
   }
+
 }
 
 @layer utilities {

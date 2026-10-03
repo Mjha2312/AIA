@@ -62,7 +62,7 @@ export default async function LocaleLayout({
 
   return (
     <html lang={locale} className={fontVariables.map((font) => font.variable).join(' ')}>
-      <body className="flex min-h-screen flex-col bg-white">
+      <body className="flex min-h-screen flex-col bg-cream">
         <Providers>
           <NextIntlClientProvider messages={messages}>
             <a className="skip-link" href="#main">

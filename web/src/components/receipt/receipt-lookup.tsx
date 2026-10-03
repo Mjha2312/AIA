@@ -31,8 +31,10 @@ export function ReceiptLookup({ initialNullifier = '' }: { initialNullifier?: st
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-navy-900 sm:text-3xl">{t('receipt.title')}</h1>
-      <p className="prose-civic mt-2">{t('receipt.stub')}</p>
+      <div className="page-hero">
+        <h1>{t('receipt.title')}</h1>
+        <p className="prose-civic mt-2">{t('receipt.stub')}</p>
+      </div>
 
       <form onSubmit={submit} className="card mt-6" aria-labelledby="receipt-heading">
         <h2 id="receipt-heading" className="text-lg font-bold text-navy-900">
