@@ -12,6 +12,9 @@ export function Hero() {
         {t('title')}
       </h1>
       <p className="prose-civic mt-4 max-w-prose">{t('subtitle')}</p>
+      <a href="#elections" className="btn-primary mt-6">
+        {t('exploreElections')}
+      </a>
     </section>
   );
 }
@@ -32,16 +35,19 @@ export function HowItWorks() {
       <ol className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
         {STEP_KEYS.map((key, index) => (
           <li key={key} className="card">
-            <p aria-hidden="true" className="text-sm font-bold text-saffron-700">
+            <span
+              aria-hidden="true"
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-navy-900 text-sm font-bold text-white"
+            >
               {index + 1}
-            </p>
+            </span>
             <h3 className="mt-1 text-base font-bold text-navy-900">{t(`steps.${key}`)}</h3>
             <p className="prose-civic mt-1">{t(`steps.${STEP_BODY_KEYS[index]}`)}</p>
           </li>
         ))}
       </ol>
 
-      <p className="prose-civic mt-4 max-w-prose border-l-4 border-green-500 pl-4">{t('explainerFootnote')}</p>
+      <p className="prose-civic mt-4 border-l-4 border-green-500 pl-4">{t('explainerFootnote')}</p>
     </section>
   );
 }

@@ -9,8 +9,8 @@ export default function HomePage({ params: { locale } }: { params: { locale: str
   return (
     <>
       <Hero />
-      <HowItWorks />
       <ElectionsList />
+      <HowItWorks />
     </>
   );
 }
