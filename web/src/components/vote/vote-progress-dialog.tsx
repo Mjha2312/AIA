@@ -2,7 +2,7 @@
 
 import { useTranslations } from 'next-intl';
 
-import { Dialog } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 export type VoteTxStatus = 'proving' | 'relaying' | 'done' | 'error';
 
@@ -58,9 +58,21 @@ export function VoteProgressDialog({
     }
   ];
 
+  // The dialog is only dismissible once the vote is confirmed or has
+  // failed — never mid-proof, so no vote state can be lost by accident.
+  const closable = status === 'done' || status === 'error';
+
+  function blockDismiss(event: { preventDefault: () => void }): void {
+    if (!closable) event.preventDefault();
+  }
+
   return (
-    <Dialog title={t('txTitle')} onClose={status === 'done' || status === 'error' ? onClose : undefined}>
-      <ol aria-live="polite" aria-label={t('txTitle')} className="space-y-3">
+    <Dialog open onOpenChange={(open) => !open && closable && onClose()}>
+      <DialogContent showClose={closable} onClose={onClose} onEscapeKeyDown={blockDismiss} onPointerDownOutside={blockDismiss}>
+        <DialogHeader>
+          <DialogTitle className="text-lg font-bold text-navy-900">{t('txTitle')}</DialogTitle>
+        </DialogHeader>
+        <ol aria-live="polite" aria-label={t('txTitle')} className="space-y-3">
         {steps.map((step) => (
           <li key={step.key} className="flex items-start gap-3">
             <span aria-hidden="true" className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center">
@@ -109,6 +121,7 @@ export function VoteProgressDialog({
           {t('viewReceipt')}
         </button>
       ) : null}
+      </DialogContent>
     </Dialog>
   );
 }
