@@ -300,5 +300,22 @@
     "secure": "Secure",
     "transparent": "Transparent",
     "verifiable": "Verifiable"
+  },
+  "info": {
+    "faqsTitle": "Frequently Asked Questions",
+    "faqQ1": "Is my vote truly secret?",
+    "faqA1": "Yes. We use Zero-Knowledge (ZK) proofs. The system verifies your eligibility to vote, but your identity is never mathematically linked to the candidate you choose.",
+    "faqQ2": "How do I know my vote was counted?",
+    "faqA2": "After voting, you receive a cryptographic receipt. You can enter this receipt in the Explorer tab to independently verify your vote on the public ledger.",
+    "faqQ3": "What if I lose my internet connection while voting?",
+    "faqA3": "Your vote is only recorded once the smart contract transaction is finalized. You can safely reload the portal and check your status.",
+    "aboutTitle": "About the Portal",
+    "aboutBody": "The e-Voting Portal is a next-generation democratic tool. Built on a permissioned blockchain, it ensures that elections are secure, transparent, and fully verifiable by the public, while maintaining absolute voter anonymity through cryptographic proofs.",
+    "helpTitle": "Need Assistance?",
+    "helpBefore": "If you are experiencing technical difficulties or your transaction is failing, please ensure you have a stable internet connection and that your session has not expired. For further support, contact the Election Helpdesk at ",
+    "helpPhone": "1800-111-XXXX",
+    "helpMid": " or email ",
+    "helpEmail": "techsupport@evoting.gov.in",
+    "helpAfter": "."
   }
 }

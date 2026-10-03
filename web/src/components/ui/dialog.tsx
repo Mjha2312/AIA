@@ -12,12 +12,15 @@ export function Dialog({
   title,
   onClose,
   children,
-  labelledBy = 'dialog-title'
+  labelledBy = 'dialog-title',
+  wide = false
 }: {
   title: string;
   onClose?: () => void;
   children: ReactNode;
   labelledBy?: string;
+  /** Roomier panel for content-heavy modals such as the FAQ accordion. */
+  wide?: boolean;
 }) {
   const t = useTranslations();
   const panelRef = useRef<HTMLDivElement>(null);
@@ -50,7 +53,7 @@ export function Dialog({
         aria-modal="true"
         aria-labelledby={labelledBy}
         tabIndex={-1}
-        className="w-full max-w-md rounded-xl border border-slate-200 bg-white p-5 shadow-xl focus:outline-none"
+        className={`w-full ${wide ? 'max-w-lg' : 'max-w-md'} rounded-xl border border-slate-200 bg-white p-6 shadow-xl focus:outline-none`}
       >
         <div className="flex items-start justify-between gap-3">
           <h2 id={labelledBy} className="text-lg font-bold text-navy-900">

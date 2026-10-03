@@ -1,4 +1,5 @@
 import { screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
 import { Header } from './header';
@@ -41,12 +42,44 @@ describe('Header civic navbar', () => {
     expect(within(header).queryByRole('button', { name: /sign in/i })).not.toBeInTheDocument();
   });
 
-  it('routes utility links to real in-page anchors instead of invented routes', () => {
+  it('opens info modals from the utility buttons', async () => {
     renderWithI18n(<Header />);
     const header = screen.getByRole('banner');
 
-    expect(within(header).getByRole('link', { name: 'FAQs' })).toHaveAttribute('href', '#how-it-works');
-    expect(within(header).getByRole('link', { name: 'About' })).toHaveAttribute('href', '#about');
-    expect(within(header).getByRole('link', { name: 'Help' })).toHaveAttribute('href', '#receipt-help');
+    await userEvent.click(within(header).getByRole('button', { name: 'FAQs' }));
+    expect(await screen.findByRole('dialog', { name: 'Frequently Asked Questions' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Is my vote truly secret?' })).toBeInTheDocument();
+  });
+
+  it('expands FAQ answers and closes the modal via the X button', async () => {
+    renderWithI18n(<Header />);
+
+    await userEvent.click(screen.getByRole('button', { name: 'FAQs' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Frequently Asked Questions' });
+
+    // Unopened answers stay hidden until their question is expanded…
+    expect(screen.queryByText(/independently verify your vote/)).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'How do I know my vote was counted?' }));
+    expect(await within(dialog).findByText(/independently verify your vote/)).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Close' }));
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  it('shows the About and Help content without inventing routes', async () => {
+    renderWithI18n(<Header />);
+
+    await userEvent.click(screen.getByRole('button', { name: 'About' }));
+    expect(await screen.findByRole('dialog', { name: 'About the Portal' })).toBeInTheDocument();
+    expect(screen.getByText(/next-generation democratic tool/)).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Close' }));
+
+    await userEvent.click(screen.getByRole('button', { name: 'Help' }));
+    expect(await screen.findByRole('dialog', { name: 'Need Assistance?' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: '1800-111-XXXX' })).toHaveAttribute('href', 'tel:1800111XXXX');
+    expect(screen.getByRole('link', { name: 'techsupport@evoting.gov.in' })).toHaveAttribute(
+      'href',
+      'mailto:techsupport@evoting.gov.in'
+    );
   });
 });

@@ -1,6 +1,10 @@
+'use client';
+
+import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 
 import { Link } from '@/i18n/navigation';
+import { InfoModal, type InfoModalKind } from './info-modals';
 import { LanguageSwitcher } from './language-switcher';
 
 function BallotBoxMark() {
@@ -65,6 +69,13 @@ export function Header() {
     { kind: 'verifiable' as const, label: t('trust.verifiable') }
   ];
 
+  const infoButtons: { kind: InfoModalKind; label: string }[] = [
+    { kind: 'faqs', label: t('nav.faqs') },
+    { kind: 'about', label: t('nav.about') },
+    { kind: 'help', label: t('nav.help') }
+  ];
+  const [openModal, setOpenModal] = useState<InfoModalKind | null>(null);
+
   return (
     <header className="header-frosted">
       <div className="bg-gradient-to-r from-saffron-500 via-white to-green-500" aria-hidden="true">
@@ -110,18 +121,15 @@ export function Header() {
               ))}
             </ul>
             <ul className="flex flex-wrap items-center gap-0.5 border-l border-paleblue-border pl-1">
-              {[
-                { href: '#how-it-works', label: t('nav.faqs') },
-                { href: '#about', label: t('nav.about') },
-                { href: '#receipt-help', label: t('nav.help') }
-              ].map((link) => (
-                <li key={link.href}>
-                  <a
-                    href={link.href}
+              {infoButtons.map((item) => (
+                <li key={item.kind}>
+                  <button
+                    type="button"
+                    onClick={() => setOpenModal(item.kind)}
                     className="tap rounded-md px-2.5 py-2 text-[15px] text-ink-muted hover:bg-white/70 hover:text-navy-900"
                   >
-                    {link.label}
-                  </a>
+                    {item.label}
+                  </button>
                 </li>
               ))}
             </ul>
@@ -129,6 +137,7 @@ export function Header() {
           <LanguageSwitcher />
         </div>
       </div>
+      {openModal ? <InfoModal kind={openModal} onClose={() => setOpenModal(null)} /> : null}
     </header>
   );
 }
