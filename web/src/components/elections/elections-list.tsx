@@ -6,6 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { queryKeys } from '@/lib/query-keys';
 import { ElectionCard } from './election-card';
+import { ElectionCardSkeleton } from './election-skeleton';
 
 /**
  * Elections list for the home page. Renders skeletons-free states so a voter on
@@ -33,9 +34,18 @@ export function ElectionsList() {
       </div>
 
       {isPending ? (
-        <p className="prose-civic mt-4" role="status">
-          {t('home.electionsLoading')}
-        </p>
+        <div aria-busy="true">
+          <p className="sr-only" role="status">
+            {t('home.electionsLoading')}
+          </p>
+          <ul aria-hidden="true" className="mt-4 grid grid-cols-1 items-stretch gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {[0, 1, 2].map((index) => (
+              <li key={index} className="h-full">
+                <ElectionCardSkeleton />
+              </li>
+            ))}
+          </ul>
+        </div>
       ) : null}
 
       {isError ? (

@@ -191,6 +191,23 @@
     animation: civic-draw-link 1.6s ease-out 1 both;
   }
 
+  /* Skeleton shimmer for loading cards. Subtle opacity pulse only, and the
+     global prefers-reduced-motion rule above already freezes it. */
+  @keyframes civic-shimmer {
+    0%,
+    100% {
+      opacity: 0.45;
+    }
+    50% {
+      opacity: 0.85;
+    }
+  }
+
+  .skeleton {
+    @apply rounded bg-slate-200;
+    animation: civic-shimmer 1.6s ease-in-out infinite;
+  }
+
   .live-dot {
     @apply relative inline-flex h-2.5 w-2.5 rounded-full bg-green-500;
   }

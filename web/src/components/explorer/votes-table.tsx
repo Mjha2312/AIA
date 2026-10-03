@@ -21,6 +21,8 @@ export function VotesTable({ electionId, candidates }: { electionId: string; can
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState(false);
   const [query, setQuery] = useState('');
+  // Bumped to retry the ledger fetch in place — never a full page reload.
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -45,7 +47,7 @@ export function VotesTable({ electionId, candidates }: { electionId: string; can
     return () => {
       cancelled = true;
     };
-  }, [electionId]);
+  }, [electionId, reloadKey]);
 
   async function loadMore(): Promise<void> {
     if (!nextCursor || loadingMore) return;
@@ -82,7 +84,7 @@ export function VotesTable({ electionId, candidates }: { electionId: string; can
         <button
           type="button"
           className="btn-secondary mt-3"
-          onClick={() => window.location.reload()}
+          onClick={() => setReloadKey((key) => key + 1)}
         >
           {t('common.retry')}
         </button>
